@@ -19,8 +19,8 @@ type store interface {
 	Save(token []byte, w http.ResponseWriter) error
 }
 
-// CookieStore is a signed cookie session store for CSRF tokens.
-type CookieStore struct {
+// cookieStore is a signed cookie session store for CSRF tokens.
+type cookieStore struct {
 	name   string
 	maxAge int
 	sc     *securecookie.SecureCookie
@@ -28,7 +28,7 @@ type CookieStore struct {
 
 // Get retrieves a CSRF token from the session cookie. It returns an empty token
 // if decoding fails (e.g. HMAC validation fails or the named cookie doesn't exist).
-func (cs *CookieStore) Get(r *http.Request) ([]byte, error) {
+func (cs *cookieStore) Get(r *http.Request) ([]byte, error) {
 	// Retrieve the cookie from the request
 	cookie, err := r.Cookie(cs.name)
 	if err != nil {
@@ -46,7 +46,7 @@ func (cs *CookieStore) Get(r *http.Request) ([]byte, error) {
 }
 
 // Save stores the CSRF token in the session cookie.
-func (cs *CookieStore) Save(token []byte, w http.ResponseWriter) error {
+func (cs *cookieStore) Save(token []byte, w http.ResponseWriter) error {
 	// Generate an encoded cookie value with the CSRF token.
 	encoded, err := cs.sc.Encode(cs.name, token)
 	if err != nil {

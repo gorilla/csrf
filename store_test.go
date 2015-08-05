@@ -11,7 +11,7 @@ import (
 )
 
 // Check store implementations
-var _ store = &CookieStore{}
+var _ store = &cookieStore{}
 
 // brokenSaveStore is a CSRF store that cannot, well, save.
 type brokenSaveStore struct {
@@ -65,7 +65,7 @@ func TestCookieDecode(t *testing.T) {
 	// Test with a nil hash key
 	sc := securecookie.New(nil, nil)
 	sc.MaxAge(age)
-	st := &CookieStore{cookieName, age, sc}
+	st := &cookieStore{cookieName, age, sc}
 
 	// Set a fake cookie value so r.Cookie passes.
 	r.Header.Set("Cookie", fmt.Sprintf("%s=%s", cookieName, "notacookie"))
@@ -83,7 +83,7 @@ func TestCookieEncode(t *testing.T) {
 	// Test with a nil hash key
 	sc := securecookie.New(nil, nil)
 	sc.MaxAge(age)
-	st := &CookieStore{cookieName, age, sc}
+	st := &cookieStore{cookieName, age, sc}
 
 	rr := httptest.NewRecorder()
 
