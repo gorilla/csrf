@@ -150,12 +150,12 @@ func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handle
 			}
 		}
 
-		return *cs
+		return cs
 	}
 }
 
 // Implements http.Handler for the csrf type.
-func (cs csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the token from the session.
 	// An error represents either a cookie that failed HMAC validation
 	// or that doesn't exist.
