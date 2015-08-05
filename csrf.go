@@ -49,10 +49,10 @@ var (
 )
 
 type csrf struct {
-	h     http.Handler
-	sc    *securecookie.SecureCookie
-	store Store
-	opts  options
+	h    http.Handler
+	sc   *securecookie.SecureCookie
+	st   store
+	opts options
 }
 
 // options contains the optional settings for the CSRF middleware.
@@ -141,9 +141,9 @@ func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handle
 			cs.sc.MaxAge(cs.opts.MaxAge)
 		}
 
-		if cs.store == nil {
+		if cs.st == nil {
 			// Default to the CookieStore
-			cs.store = &CookieStore{
+			cs.st = &CookieStore{
 				name:   cookieName,
 				maxAge: cs.opts.MaxAge,
 				sc:     cs.sc,
@@ -159,7 +159,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the token from the session.
 	// An error represents either a cookie that failed HMAC validation
 	// or that doesn't exist.
-	realToken, err := cs.store.Get(r)
+	realToken, err := cs.st.Get(r)
 	if err != nil || len(realToken) != tokenLength {
 		// If there was an error retrieving the token, the token doesn't exist
 		// yet, or it's the wrong length, generate a new token.
@@ -173,7 +173,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Save the new (real) token in the session store.
-		err = cs.store.Save(realToken, w)
+		err = cs.st.Save(realToken, w)
 		if err != nil {
 			envError(r, err)
 			cs.opts.ErrorHandler.ServeHTTP(w, r)

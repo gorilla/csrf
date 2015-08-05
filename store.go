@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-// Store represents the session storage used for CSRF tokens.
-type Store interface {
+// store represents the session storage used for CSRF tokens.
+type store interface {
 	// Get returns the real CSRF token from the store.
 	Get(*http.Request) ([]byte, error)
 	// Save stores the real CSRF token in the store and writes a

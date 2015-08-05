@@ -10,12 +10,12 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-// Check Store implementations
-var _ Store = &CookieStore{}
+// Check store implementations
+var _ store = &CookieStore{}
 
 // brokenSaveStore is a CSRF store that cannot, well, save.
 type brokenSaveStore struct {
-	Store
+	store
 }
 
 func (bs *brokenSaveStore) Get(*http.Request) ([]byte, error) {
@@ -65,12 +65,12 @@ func TestCookieDecode(t *testing.T) {
 	// Test with a nil hash key
 	sc := securecookie.New(nil, nil)
 	sc.MaxAge(age)
-	store := &CookieStore{cookieName, age, sc}
+	st := &CookieStore{cookieName, age, sc}
 
 	// Set a fake cookie value so r.Cookie passes.
 	r.Header.Set("Cookie", fmt.Sprintf("%s=%s", cookieName, "notacookie"))
 
-	_, err = store.Get(r)
+	_, err = st.Get(r)
 	if err == nil {
 		t.Fatal("cookiestore did not report an invalid hashkey on decode")
 	}
@@ -83,11 +83,11 @@ func TestCookieEncode(t *testing.T) {
 	// Test with a nil hash key
 	sc := securecookie.New(nil, nil)
 	sc.MaxAge(age)
-	store := &CookieStore{cookieName, age, sc}
+	st := &CookieStore{cookieName, age, sc}
 
 	rr := httptest.NewRecorder()
 
-	err := store.Save(nil, rr)
+	err := st.Save(nil, rr)
 	if err == nil {
 		t.Fatal("cookiestore did not report an invalid hashkey on encode")
 	}
