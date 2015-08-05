@@ -34,18 +34,19 @@ go get github.com/gorilla/csrf
 
 ## Examples
 
-gorilla/csrf is easy to use: add the middleware to individual handlers with
+gorilla/csrf is easy to use: add the middleware to your router with
 the below:
 
 ```go
 CSRF := csrf.Protect([]byte("32-byte-long-auth-key"))
-http.HandlerFunc("/route", CSRF(YourHandler))
+http.ListenAndServe(":8000", CSRF(r))
 ```
 
-... and then collect the token with `csrf.Token(r)` before passing it to the
-template, JSON body or HTTP header (you pick!). gorilla/csrf inspects the form body
-(first) and HTTP headers (second) on subsequent POST/PUT/PATCH/DELETE/etc. requests
-for the token.
+...and then collect the token with `csrf.Token(r)` in your handlers before
+passing it to the template, JSON body or HTTP header (see below).
+
+gorilla/csrf inspects the form body (first) and HTTP headers (second) on
+subsequent POST/PUT/PATCH/DELETE/etc. requests for the token.
 
 ### HTML Forms
 
