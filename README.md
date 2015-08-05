@@ -59,6 +59,7 @@ import (
     "net/http"
 
     "github.com/gorilla/csrf"
+    "github.com/gorilla/mux"
 )
 
 func main() {
