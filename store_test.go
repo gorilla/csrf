@@ -27,12 +27,6 @@ func (bs *brokenSaveStore) Save(realToken []byte, w http.ResponseWriter) error {
 	return errors.New("test error")
 }
 
-func setStore(s Store) func(*csrf) {
-	return func(cs *csrf) {
-		cs.store = s
-	}
-}
-
 // Tests for failure if the middleware can't save to the Store.
 func TestStoreCannotSave(t *testing.T) {
 	s := http.NewServeMux()
@@ -57,7 +51,6 @@ func TestStoreCannotSave(t *testing.T) {
 		t.Fatalf("broken store incorrectly set a cookie: got %v want %v",
 			c, "")
 	}
-
 }
 
 // TestCookieDecode tests that an invalid cookie store returns a decoding error.

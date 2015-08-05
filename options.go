@@ -80,6 +80,14 @@ func FieldName(name string) func(*csrf) {
 	}
 }
 
+// setStore sets the Store used by the CSRF middleware.
+// Note: this is private (for now) to allow for internal API changes.
+func setStore(s Store) func(*csrf) {
+	return func(cs *csrf) {
+		cs.store = s
+	}
+}
+
 // parseOptions parses the supplied options functions and returns a configured
 // csrf handler.
 func parseOptions(h http.Handler, opts ...func(*csrf)) *csrf {

@@ -82,13 +82,32 @@ func TestMethods(t *testing.T) {
 			t.Fatalf("cookie not set: got %q", rr.Header().Get("Set-Cookie"))
 		}
 	}
-
 }
 
-// Tests for failure if the cookie containing the session is removed from the
-// request.
+// Tests for failure if the cookie containing the session does not exist on a
+// POST request.
 func TestNoCookie(t *testing.T) {
+	s := http.NewServeMux()
+	p := Protect(testKey)(s)
 
+	var token string
+	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	}))
+
+	// POST the token back in the header.
+	r, err := http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("middleware failed to reject a non-existent cookie: got %v want %v",
+			rr.Code, http.StatusForbidden)
+	}
 }
 
 // TestBadCookie tests for failure when a cookie header is modified (malformed).
@@ -170,7 +189,7 @@ func TestNoReferer(t *testing.T) {
 	p.ServeHTTP(rr, r)
 
 	if rr.Code != http.StatusForbidden {
-		t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+		t.Fatalf("middleware failed reject an empty Referer header: got %v want %v",
 			rr.Code, http.StatusForbidden)
 	}
 }
@@ -211,7 +230,7 @@ func TestBadReferer(t *testing.T) {
 	p.ServeHTTP(rr, r)
 
 	if rr.Code != http.StatusForbidden {
-		t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+		t.Fatalf("middleware failed reject a non-matching Referer header: got %v want %v",
 			rr.Code, http.StatusForbidden)
 	}
 }

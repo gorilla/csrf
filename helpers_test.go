@@ -131,7 +131,6 @@ func TestXOR(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 // shortReader provides a broken implementation of io.Reader for testing.
