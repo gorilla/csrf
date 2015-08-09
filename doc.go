@@ -85,6 +85,11 @@ in order to protect malicious POST requests being made:
     	fmt.Fprintf(w, "%v\n", r.PostForm)
     }
 
+Note that the CSRF middleware will (by necessity) consume the request body if the
+token is passed via POST form values. If you need to consume this in your
+handler, insert your own middleware earlier in the chain to capture the request
+body.
+
 You can also send the CSRF token in the response header. This approach is useful
 if you're using a front-end JavaScript framework like Ember or Angular, or are
 providing a JSON API:

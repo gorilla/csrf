@@ -92,6 +92,11 @@ func SubmitSignupForm(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+Note that the CSRF middleware will (by necessity) consume the request body if the
+token is passed via POST form values. If you need to consume this in your
+handler, insert your own middleware earlier in the chain to capture the request
+body.
+
 ### JSON Responses
 
 This approach is useful if you're using a front-end JavaScript framework like

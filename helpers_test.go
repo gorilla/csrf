@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -57,6 +58,64 @@ func TestFormToken(t *testing.T) {
 
 	if !strings.Contains(rr.Body.String(), token) {
 		t.Fatalf("token not in response body: got %v want %v", rr.Body.String(), token)
+	}
+}
+
+// Test that we can extract a CSRF token from a multipart form.
+func TestMultipartFormToken(t *testing.T) {
+	s := http.NewServeMux()
+
+	// Make the token available outside of the handler for comparison.
+	var token string
+	s.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+		t := template.Must((template.New("base").Parse(testTemplate)))
+		t.Execute(w, map[string]interface{}{
+			TemplateTag: TemplateField(r),
+		})
+	}))
+
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p := Protect(testKey)(s)
+	p.ServeHTTP(rr, r)
+
+	// Set up our multipart form
+	var b bytes.Buffer
+	mp := multipart.NewWriter(&b)
+	wr, err := mp.CreateFormField(fieldName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wr.Write([]byte(token))
+	mp.Close()
+
+	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", &b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add the multipart header.
+	r.Header.Set("Content-Type", mp.FormDataContentType())
+
+	// Send back the issued cookie.
+	setCookie(rr, r)
+
+	rr = httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+			rr.Code, http.StatusOK)
+	}
+
+	if body := rr.Body.String(); !strings.Contains(body, token) {
+		t.Fatalf("token not in response body: got %v want %v", body, token)
 	}
 }
 
