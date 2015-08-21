@@ -47,7 +47,7 @@ func FailureReason(r *http.Request) error {
 //      {{ .csrfField }}
 //
 //      // ... becomes:
-//      <input type="hidden" name="protect.csrf.Token" value="<token>">
+//      <input type="hidden" name="gorilla.csrf.Token" value="<token>">
 //
 func TemplateField(r *http.Request) template.HTML {
 	fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
@@ -94,12 +94,12 @@ func unmask(issued []byte) []byte {
 // requestToken returns the issued token (pad + masked token) from the HTTP POST
 // body or HTTP header. It will return nil if the token fails to decode.
 func (cs *csrf) requestToken(r *http.Request) []byte {
-	// 1. Check the POST (form) value first.
-	issued := r.PostFormValue(cs.opts.FieldName)
+	// 1. Check the HTTP header first.
+	issued := r.Header.Get(cs.opts.RequestHeader)
 
-	// 2. Fall back to the HTTP header
+	// 2. Fall back to the POST (form) value.
 	if issued == "" {
-		issued = r.Header.Get(cs.opts.RequestHeader)
+		issued = r.PostFormValue(cs.opts.FieldName)
 	}
 
 	// 3. Finally, fall back to the multipart form (if set).
