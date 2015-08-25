@@ -24,6 +24,8 @@ const (
 var (
 	// The name value used in form fields.
 	fieldName = tokenKey
+	// defaultAge sets the default MaxAge for cookies.
+	defaultAge = 3600 * 12
 	// The default HTTP request header to inspect
 	headerName = "X-CSRF-Token"
 	// Idempotent (safe) methods as defined by RFC7231 section 4.2.2.
@@ -67,6 +69,7 @@ type options struct {
 	RequestHeader string
 	FieldName     string
 	ErrorHandler  http.Handler
+	CookieName    string
 }
 
 // Protect is HTTP middleware that provides Cross-Site Request Forgery
@@ -123,11 +126,15 @@ func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handle
 
 		if cs.opts.MaxAge < 1 {
 			// Default of 12 hours
-			cs.opts.MaxAge = 3600 * 12
+			cs.opts.MaxAge = defaultAge
 		}
 
 		if cs.opts.FieldName == "" {
 			cs.opts.FieldName = fieldName
+		}
+
+		if cs.opts.CookieName == "" {
+			cs.opts.CookieName = cookieName
 		}
 
 		if cs.opts.RequestHeader == "" {
@@ -144,7 +151,7 @@ func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handle
 		if cs.st == nil {
 			// Default to the cookieStore
 			cs.st = &cookieStore{
-				name:   cookieName,
+				name:   cs.opts.CookieName,
 				maxAge: cs.opts.MaxAge,
 				sc:     cs.sc,
 			}

@@ -80,6 +80,16 @@ func FieldName(name string) func(*csrf) {
 	}
 }
 
+// CookieName changes the name of the CSRF cookie issued to clients.
+//
+// Note that cookie names should not contain whitespace, commas, semicolons,
+// backslashes or control characters as per RFC6265.
+func CookieName(name string) func(*csrf) {
+	return func(cs *csrf) {
+		cs.opts.CookieName = name
+	}
+}
+
 // setStore sets the store used by the CSRF middleware.
 // Note: this is private (for now) to allow for internal API changes.
 func setStore(s store) func(*csrf) {
