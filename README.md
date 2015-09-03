@@ -45,6 +45,11 @@ http.ListenAndServe(":8000", CSRF(r))
 ...and then collect the token with `csrf.Token(r)` in your handlers before
 passing it to the template, JSON body or HTTP header (see below).
 
+Note that the authentication key passed to `csrf.Protect([]byte(key))` should be
+32-bytes long and persist across application restarts. Generating a random key
+won't allow you to authenticate existing cookies and will break your CSRF
+validation.
+
 gorilla/csrf inspects the form body (first) and HTTP headers (second) on
 subsequent POST/PUT/PATCH/DELETE/etc. requests for the token.
 
