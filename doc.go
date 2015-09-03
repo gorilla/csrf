@@ -23,6 +23,11 @@ template, JSON body or HTTP header (you pick!). gorilla/csrf inspects the form b
 (first) and HTTP headers (second) on subsequent POST/PUT/PATCH/DELETE/etc. requests
 for the token.
 
+Note that the authentication key passed to `csrf.Protect([]byte(key))` should be
+32-bytes long and persist across application restarts. Generating a random key
+won't allow you to authenticate existing cookies and will break your CSRF
+validation.
+
 Here's the common use-case: HTML forms you want to provide CSRF protection for,
 in order to protect malicious POST requests being made:
 

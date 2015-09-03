@@ -100,6 +100,8 @@ type options struct {
 //
 //	  // Add the middleware to your router.
 //	  http.ListenAndServe(":8000",
+//            // Note that the authentication key provided should be 32 bytes
+//            // long and persist across application restarts.
 //			  csrf.Protect([]byte("32-byte-long-auth-key"))(r))
 //	}
 //
