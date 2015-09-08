@@ -153,9 +153,11 @@ func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handle
 		if cs.st == nil {
 			// Default to the cookieStore
 			cs.st = &cookieStore{
-				name:   cs.opts.CookieName,
-				maxAge: cs.opts.MaxAge,
-				sc:     cs.sc,
+				name:     cs.opts.CookieName,
+				maxAge:   cs.opts.MaxAge,
+				secure:   cs.opts.Secure,
+				httpOnly: cs.opts.HttpOnly,
+				sc:       cs.sc,
 			}
 		}
 
