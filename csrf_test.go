@@ -33,6 +33,12 @@ func TestProtect(t *testing.T) {
 	if rr.Header().Get("Set-Cookie") == "" {
 		t.Fatalf("cookie not set: got %q", rr.Header().Get("Set-Cookie"))
 	}
+
+	cookie := rr.Header().Get("Set-Cookie")
+	if !strings.Contains(cookie, "HttpOnly") || !strings.Contains(cookie,
+		"Secure") {
+		t.Fatalf("cookie does not default to Secure & HttpOnly: got %v", cookie)
+	}
 }
 
 // Test that idempotent methods return a 200 OK status and that non-idempotent
