@@ -41,6 +41,42 @@ func TestProtect(t *testing.T) {
 	}
 }
 
+// TestCookieOptions is a test to make sure the middleware correctly sets cookie options
+func TestCookieOptions(t *testing.T) {
+	s := http.NewServeMux()
+	s.HandleFunc("/", testHandler)
+
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p := Protect(testKey, CookieName("nameoverride"), Secure(false), HttpOnly(false), Path("/pathoverride"), Domain("domainoverride"), MaxAge(173))(s)
+	p.ServeHTTP(rr, r)
+
+	if rr.Header().Get("Set-Cookie") == "" {
+		t.Fatalf("cookie not set: got %q", rr.Header().Get("Set-Cookie"))
+	}
+
+	cookie := rr.Header().Get("Set-Cookie")
+	if strings.Contains(cookie, "HttpOnly") {
+		t.Fatalf("cookie does not respect HttpOnly option: got %v do not want HttpOnly", cookie)
+	}
+	if strings.Contains(cookie, "Secure") {
+		t.Fatalf("cookie does not respect Secure option: got %v do not want Secure", cookie)
+	}
+	if !strings.Contains(cookie, "nameoverride=") {
+		t.Fatalf("cookie does not respect CookieName option: got %v want %v", cookie, "nameoverride=")
+	}
+	if !strings.Contains(cookie, "Domain=domainoverride") {
+		t.Fatalf("cookie does not respect Domain option: got %v want %v", cookie, "Domain=domainoverride")
+	}
+	if !strings.Contains(cookie, "Max-Age=173") {
+		t.Fatalf("cookie does not respect MaxAge option: got %v want %v", cookie, "Max-Age=173")
+	}
+}
+
 // Test that idempotent methods return a 200 OK status and that non-idempotent
 // methods return a 403 Forbidden status when a CSRF cookie is not present.
 func TestMethods(t *testing.T) {
