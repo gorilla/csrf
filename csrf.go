@@ -159,6 +159,8 @@ func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handle
 				maxAge:   cs.opts.MaxAge,
 				secure:   cs.opts.Secure,
 				httpOnly: cs.opts.HttpOnly,
+				path:     cs.opts.Path,
+				domain:   cs.opts.Domain,
 				sc:       cs.sc,
 			}
 		}

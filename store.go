@@ -25,6 +25,8 @@ type cookieStore struct {
 	maxAge   int
 	secure   bool
 	httpOnly bool
+	path     string
+	domain   string
 	sc       *securecookie.SecureCookie
 }
 
@@ -61,6 +63,8 @@ func (cs *cookieStore) Save(token []byte, w http.ResponseWriter) error {
 		MaxAge:   cs.maxAge,
 		HttpOnly: cs.httpOnly,
 		Secure:   cs.secure,
+		Path:     cs.path,
+		Domain:   cs.domain,
 	}
 
 	// Set the Expires field on the cookie based on the MaxAge
