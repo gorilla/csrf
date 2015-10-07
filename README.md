@@ -50,7 +50,7 @@ Note that the authentication key passed to `csrf.Protect([]byte(key))` should be
 won't allow you to authenticate existing cookies and will break your CSRF
 validation.
 
-gorilla/csrf inspects the form body (first) and HTTP headers (second) on
+gorilla/csrf inspects the HTTP headers (first) and form body (second) on
 subsequent POST/PUT/PATCH/DELETE/etc. requests for the token.
 
 ### HTML Forms
