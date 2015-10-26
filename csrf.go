@@ -117,7 +117,7 @@ type options struct {
 //		// framework.
 //	}
 //
-func Protect(authKey []byte, opts ...func(*csrf)) func(http.Handler) http.Handler {
+func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		cs := parseOptions(h, opts...)
 
