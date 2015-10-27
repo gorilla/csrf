@@ -2,7 +2,7 @@ package csrf
 
 import "net/http"
 
-// Option describes a functional option for configuring the the CSRF handler.
+// Option describes a functional option for configuring the CSRF handler.
 type Option func(*csrf)
 
 // MaxAge sets the maximum age (in seconds) of a CSRF token's underlying cookie.
