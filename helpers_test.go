@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -212,5 +213,44 @@ func TestGenerateRandomBytes(t *testing.T) {
 	b, err := generateRandomBytes(tokenLength)
 	if err == nil {
 		t.Fatalf("generateRandomBytes did not report a short read: only read %d bytes", len(b))
+	}
+}
+
+func TestTemplateField(t *testing.T) {
+	s := http.NewServeMux()
+
+	// Make the token & template field available outside of the handler.
+	var token string
+	var templateField string
+	s.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+		templateField = string(TemplateField(r))
+		t := template.Must((template.New("base").Parse(testTemplate)))
+		t.Execute(w, map[string]interface{}{
+			TemplateTag: TemplateField(r),
+		})
+	}))
+
+	testFieldName := "custom_field_name"
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p := Protect(testKey, FieldName(testFieldName))(s)
+	p.ServeHTTP(rr, r)
+
+	expectedField := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
+		testFieldName, token)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+			rr.Code, http.StatusOK)
+	}
+
+	if templateField != expectedField {
+		t.Fatalf("custom FieldName was not set correctly: got %v want %v",
+			templateField, expectedField)
 	}
 }
