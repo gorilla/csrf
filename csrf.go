@@ -16,6 +16,7 @@ const tokenLength = 32
 // Context/session keys & prefixes
 const (
 	tokenKey    string = "gorilla.csrf.Token"
+	formKey     string = "gorilla.csrf.Form"
 	errorKey    string = "gorilla.csrf.Error"
 	cookieName  string = "_gorilla_csrf"
 	errorPrefix string = "gorilla/csrf: "
@@ -198,6 +199,8 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Save the masked token to the request context
 	context.Set(r, tokenKey, mask(realToken, r))
+	// Save the field name to the request context
+	context.Set(r, formKey, cs.opts.FieldName)
 
 	// HTTP methods not defined as idempotent ("safe") under RFC7231 require
 	// inspection.

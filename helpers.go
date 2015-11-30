@@ -50,10 +50,15 @@ func FailureReason(r *http.Request) error {
 //      <input type="hidden" name="gorilla.csrf.Token" value="<token>">
 //
 func TemplateField(r *http.Request) template.HTML {
-	fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
-		fieldName, Token(r))
+	name, ok := context.GetOk(r, formKey)
+	if ok {
+		fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
+			name, Token(r))
 
-	return template.HTML(fragment)
+		return template.HTML(fragment)
+	}
+
+	return template.HTML("")
 }
 
 // mask returns a unique-per-request token to mitigate the BREACH attack
