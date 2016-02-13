@@ -150,11 +150,13 @@ func sameOrigin(a, b *url.URL) bool {
 // compare securely (constant-time) compares the unmasked token from the request
 // against the real token from the session.
 func compareTokens(a, b []byte) bool {
-	if subtle.ConstantTimeCompare(a, b) == 1 {
-		return true
+	// This is required as subtle.ConstantTimeCompare does not check for equal
+	// lengths in Go versions prior to 1.3.
+	if len(a) != len(b) {
+		return false
 	}
 
-	return false
+	return subtle.ConstantTimeCompare(a, b) == 1
 }
 
 // xorToken XORs tokens ([]byte) to provide unique-per-request CSRF tokens. It
