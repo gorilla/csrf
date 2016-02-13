@@ -254,3 +254,14 @@ func TestTemplateField(t *testing.T) {
 			templateField, expectedField)
 	}
 }
+
+func TestCompareTokens(t *testing.T) {
+	// Go's subtle.ConstantTimeCompare prior to 1.3 did not check for matching
+	// lengths.
+	a := []byte("")
+	b := []byte("an-actual-token")
+
+	if v := compareTokens(a, b); v == true {
+		t.Fatalf("compareTokens failed on different tokens: got %v want %v", v, !v)
+	}
+}
