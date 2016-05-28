@@ -15,11 +15,12 @@ const tokenLength = 32
 
 // Context/session keys & prefixes
 const (
-	tokenKey    string = "gorilla.csrf.Token"
-	formKey     string = "gorilla.csrf.Form"
-	errorKey    string = "gorilla.csrf.Error"
-	cookieName  string = "_gorilla_csrf"
-	errorPrefix string = "gorilla/csrf: "
+	tokenKey     string = "gorilla.csrf.Token"
+	formKey      string = "gorilla.csrf.Form"
+	errorKey     string = "gorilla.csrf.Error"
+	skipCheckKey string = "gorilla.csrf.Skip"
+	cookieName   string = "_gorilla_csrf"
+	errorPrefix  string = "gorilla/csrf: "
 )
 
 var (
@@ -172,6 +173,16 @@ func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 
 // Implements http.Handler for the csrf type.
 func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Skip the check if directed to. This should always be a bool.
+	if val, ok := context.GetOk(r, skipCheckKey); ok {
+		if skip, ok := val.(bool); ok {
+			if skip {
+				cs.h.ServeHTTP(w, r)
+				return
+			}
+		}
+	}
+
 	// Retrieve the token from the session.
 	// An error represents either a cookie that failed HMAC validation
 	// or that doesn't exist.

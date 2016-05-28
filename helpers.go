@@ -38,6 +38,16 @@ func FailureReason(r *http.Request) error {
 	return nil
 }
 
+// UnsafeSkipCheck will skip the CSRF check for any requests.  This must be
+// called before the CSRF middleware.
+//
+// Note: You should not set this without otherwise securing the request from
+// CSRF attacks. The primary use-case for this function is to turn off CSRF
+// checks for non-browser clients using authorization tokens against your API.
+func UnsafeSkipCheck(r *http.Request) {
+	context.Set(r, skipCheckKey, true)
+}
+
 // TemplateField is a template helper for html/template that provides an <input> field
 // populated with a CSRF token.
 //
