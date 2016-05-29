@@ -174,7 +174,7 @@ func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 // Implements http.Handler for the csrf type.
 func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Skip the check if directed to. This should always be a bool.
-	if val, ok := context.GetOk(r, skipCheckKey); ok {
+	if val, err := contextGet(r, skipCheckKey); err == nil {
 		if skip, ok := val.(bool); ok {
 			if skip {
 				cs.h.ServeHTTP(w, r)
@@ -209,9 +209,9 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the masked token to the request context
-	context.Set(r, tokenKey, mask(realToken, r))
+	r = contextSave(r, tokenKey, mask(realToken, r))
 	// Save the field name to the request context
-	context.Set(r, formKey, cs.opts.FieldName)
+	r = contextSave(r, formKey, cs.opts.FieldName)
 
 	// HTTP methods not defined as idempotent ("safe") under RFC7231 require
 	// inspection.
