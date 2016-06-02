@@ -34,6 +34,11 @@ go get github.com/gorilla/csrf
 
 ## Examples
 
+* [HTML Forms](#html-forms)
+* [JavaScript Apps](#javascript-applications)
+* [Google App Engine](#google-app-engine)
+* [Setting Options](#setting-options)
+
 gorilla/csrf is easy to use: add the middleware to your router with
 the below:
 
@@ -104,10 +109,10 @@ token is passed via POST form values. If you need to consume this in your
 handler, insert your own middleware earlier in the chain to capture the request
 body.
 
-### JSON Responses
+### JavaScript Applications
 
 This approach is useful if you're using a front-end JavaScript framework like
-Ember or Angular, or are providing a JSON API.
+React, Ember or Angular, or are providing a JSON API.
 
 We'll also look at applying selective CSRF protection using
 [gorilla/mux's](http://www.gorillatoolkit.org/pkg/mux) sub-routers,
@@ -146,6 +151,27 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
     }
 
     w.Write(b)
+}
+```
+
+### Google App Engine
+
+If you're using [Google App
+Engine](https://cloud.google.com/appengine/docs/go/how-requests-are-handled#Go_Requests_and_HTTP),
+which doesn't allow you to hook into the default `http.ServeMux` directly,
+you can still use gorilla/csrf (and gorilla/mux):
+
+```go
+package app
+
+// Remember: appengine has its own package main
+func init() {
+    r := mux.NewRouter()
+    r.HandleFunc("/", IndexHandler)
+    // ...
+
+    // We pass our CSRF-protected router to the DefaultServeMux
+    http.Handle("/", csrf.Protect([]byte(your-key))(r))
 }
 ```
 
