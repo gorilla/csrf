@@ -270,7 +270,7 @@ func TestUnsafeSkipCSRFCheck(t *testing.T) {
 	s := http.NewServeMux()
 	skipCheck := func(h http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			UnsafeSkipCheck(r)
+			r = UnsafeSkipCheck(r)
 			h.ServeHTTP(w, r)
 		}
 
