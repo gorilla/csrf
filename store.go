@@ -68,11 +68,11 @@ func (cs *cookieStore) Save(token []byte, w http.ResponseWriter) error {
 	}
 
 	// Set the Expires field on the cookie based on the MaxAge
+	// If MaxAge <= 0, we don't set the Expires attribute, making the cookie
+	// session-only.
 	if cs.maxAge > 0 {
 		cookie.Expires = time.Now().Add(
 			time.Duration(cs.maxAge) * time.Second)
-	} else {
-		cookie.Expires = time.Unix(1, 0)
 	}
 
 	// Write the authenticated cookie to the response.
