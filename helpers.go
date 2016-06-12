@@ -16,7 +16,7 @@ import (
 // a JSON response body. An empty token will be returned if the middleware
 // has not been applied (which will fail subsequent validation).
 func Token(r *http.Request) string {
-	if val, ok := context.GetOk(r, tokenKey); ok {
+	if val, err := contextGet(r, tokenKey); err == nil {
 		if maskedToken, ok := val.(string); ok {
 			return maskedToken
 		}
@@ -29,13 +29,23 @@ func Token(r *http.Request) string {
 // This is useful when you want to log the cause of the error or report it to
 // client.
 func FailureReason(r *http.Request) error {
-	if val, ok := context.GetOk(r, errorKey); ok {
+	if val, err := contextGet(r, errorKey); err == nil {
 		if err, ok := val.(error); ok {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// UnsafeSkipCheck will skip the CSRF check for any requests.  This must be
+// called before the CSRF middleware.
+//
+// Note: You should not set this without otherwise securing the request from
+// CSRF attacks. The primary use-case for this function is to turn off CSRF
+// checks for non-browser clients using authorization tokens against your API.
+func UnsafeSkipCheck(r *http.Request) *http.Request {
+	return contextSave(r, skipCheckKey, true)
 }
 
 // TemplateField is a template helper for html/template that provides an <input> field
@@ -50,8 +60,7 @@ func FailureReason(r *http.Request) error {
 //      <input type="hidden" name="gorilla.csrf.Token" value="<token>">
 //
 func TemplateField(r *http.Request) template.HTML {
-	name, ok := context.GetOk(r, formKey)
-	if ok {
+	if name, err := contextGet(r, formKey); err == nil {
 		fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
 			name, Token(r))
 
@@ -150,11 +159,13 @@ func sameOrigin(a, b *url.URL) bool {
 // compare securely (constant-time) compares the unmasked token from the request
 // against the real token from the session.
 func compareTokens(a, b []byte) bool {
-	if subtle.ConstantTimeCompare(a, b) == 1 {
-		return true
+	// This is required as subtle.ConstantTimeCompare does not check for equal
+	// lengths in Go versions prior to 1.3.
+	if len(a) != len(b) {
+		return false
 	}
 
-	return false
+	return subtle.ConstantTimeCompare(a, b) == 1
 }
 
 // xorToken XORs tokens ([]byte) to provide unique-per-request CSRF tokens. It

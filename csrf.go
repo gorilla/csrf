@@ -1,10 +1,11 @@
 package csrf
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/securecookie"
@@ -15,11 +16,12 @@ const tokenLength = 32
 
 // Context/session keys & prefixes
 const (
-	tokenKey    string = "gorilla.csrf.Token"
-	formKey     string = "gorilla.csrf.Form"
-	errorKey    string = "gorilla.csrf.Error"
-	cookieName  string = "_gorilla_csrf"
-	errorPrefix string = "gorilla/csrf: "
+	tokenKey     string = "gorilla.csrf.Token"
+	formKey      string = "gorilla.csrf.Form"
+	errorKey     string = "gorilla.csrf.Error"
+	skipCheckKey string = "gorilla.csrf.Skip"
+	cookieName   string = "_gorilla_csrf"
+	errorPrefix  string = "gorilla/csrf: "
 )
 
 var (
@@ -172,6 +174,16 @@ func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 
 // Implements http.Handler for the csrf type.
 func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Skip the check if directed to. This should always be a bool.
+	if val, err := contextGet(r, skipCheckKey); err == nil {
+		if skip, ok := val.(bool); ok {
+			if skip {
+				cs.h.ServeHTTP(w, r)
+				return
+			}
+		}
+	}
+
 	// Retrieve the token from the session.
 	// An error represents either a cookie that failed HMAC validation
 	// or that doesn't exist.
@@ -198,9 +210,9 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the masked token to the request context
-	context.Set(r, tokenKey, mask(realToken, r))
+	r = contextSave(r, tokenKey, mask(realToken, r))
 	// Save the field name to the request context
-	context.Set(r, formKey, cs.opts.FieldName)
+	r = contextSave(r, formKey, cs.opts.FieldName)
 
 	// HTTP methods not defined as idempotent ("safe") under RFC7231 require
 	// inspection.
