@@ -127,7 +127,7 @@ func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 			cs.opts.ErrorHandler = http.HandlerFunc(unauthorizedHandler)
 		}
 
-		if cs.opts.MaxAge < 1 {
+		if cs.opts.MaxAge < 0 {
 			// Default of 12 hours
 			cs.opts.MaxAge = defaultAge
 		}

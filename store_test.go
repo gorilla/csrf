@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/securecookie"
@@ -91,5 +92,37 @@ func TestCookieEncode(t *testing.T) {
 	err := st.Save(nil, rr)
 	if err == nil {
 		t.Fatal("cookiestore did not report an invalid hashkey on encode")
+	}
+}
+
+// TestMaxAgeZero tests that setting MaxAge(0) does not set the Expires
+// attribute on the cookie.
+func TestMaxAgeZero(t *testing.T) {
+	var age = 0
+
+	s := http.NewServeMux()
+	s.HandleFunc("/", testHandler)
+
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p := Protect(testKey, MaxAge(age))(s)
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+			rr.Code, http.StatusOK)
+	}
+
+	if rr.Header().Get("Set-Cookie") == "" {
+		t.Fatalf("cookie not set: got %q", rr.Header().Get("Set-Cookie"))
+	}
+
+	cookie := rr.Header().Get("Set-Cookie")
+	if !strings.Contains(cookie, "HttpOnly") || strings.Contains(cookie, "Expires") {
+		t.Fatalf("cookie incorrectly has the Expires attribute set: got %q", cookie)
 	}
 }
