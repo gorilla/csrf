@@ -23,3 +23,7 @@ func contextSave(r *http.Request, key string, val interface{}) *http.Request {
 	ctx = context.WithValue(ctx, key, val)
 	return r.WithContext(ctx)
 }
+
+func contextClear(r *http.Request) {
+	// no-op for go1.7+
+}

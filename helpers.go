@@ -8,8 +8,6 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
-
-	"github.com/gorilla/context"
 )
 
 // Token returns a masked CSRF token ready for passing into HTML template or
@@ -200,6 +198,6 @@ func contains(vals []string, s string) bool {
 }
 
 // envError stores a CSRF error in the request context.
-func envError(r *http.Request, err error) {
-	context.Set(r, errorKey, err)
+func envError(r *http.Request, err error) *http.Request {
+	return contextSave(r, errorKey, err)
 }
