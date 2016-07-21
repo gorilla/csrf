@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/gorilla/context"
 	"github.com/gorilla/securecookie"
 )
 
@@ -195,7 +194,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// as it will no longer match the request token.
 		realToken, err = generateRandomBytes(tokenLength)
 		if err != nil {
-			envError(r, err)
+			r = envError(r, err)
 			cs.opts.ErrorHandler.ServeHTTP(w, r)
 			return
 		}
@@ -203,7 +202,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Save the new (real) token in the session store.
 		err = cs.st.Save(realToken, w)
 		if err != nil {
-			envError(r, err)
+			r = envError(r, err)
 			cs.opts.ErrorHandler.ServeHTTP(w, r)
 			return
 		}
@@ -225,13 +224,13 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// otherwise fails to parse.
 			referer, err := url.Parse(r.Referer())
 			if err != nil || referer.String() == "" {
-				envError(r, ErrNoReferer)
+				r = envError(r, ErrNoReferer)
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return
 			}
 
 			if sameOrigin(r.URL, referer) == false {
-				envError(r, ErrBadReferer)
+				r = envError(r, ErrBadReferer)
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return
 			}
@@ -240,7 +239,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// If the token returned from the session store is nil for non-idempotent
 		// ("unsafe") methods, call the error handler.
 		if realToken == nil {
-			envError(r, ErrNoToken)
+			r = envError(r, ErrNoToken)
 			cs.opts.ErrorHandler.ServeHTTP(w, r)
 			return
 		}
@@ -250,7 +249,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Compare the request token against the real token
 		if !compareTokens(requestToken, realToken) {
-			envError(r, ErrBadToken)
+			r = envError(r, ErrBadToken)
 			cs.opts.ErrorHandler.ServeHTTP(w, r)
 			return
 		}
@@ -263,7 +262,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Call the wrapped handler/router on success.
 	cs.h.ServeHTTP(w, r)
 	// Clear the request context after the handler has completed.
-	context.Clear(r)
+	contextClear(r)
 }
 
 // unauthorizedhandler sets a HTTP 403 Forbidden status and writes the

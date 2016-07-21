@@ -22,3 +22,7 @@ func contextSave(r *http.Request, key string, val interface{}) *http.Request {
 	context.Set(r, key, val)
 	return r
 }
+
+func contextClear(r *http.Request) {
+	context.Clear(r)
+}
