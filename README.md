@@ -111,12 +111,38 @@ body.
 
 ### JavaScript Applications
 
-This approach is useful if you're using a front-end JavaScript framework like
-React, Ember or Angular, or are providing a JSON API.
+If you're using a front-end JavaScript framework like
+React, Vue.js or Angular, there are two approaches to consider:
 
-We'll also look at applying selective CSRF protection using
-[gorilla/mux's](http://www.gorillatoolkit.org/pkg/mux) sub-routers,
-as we don't handle any POST/PUT/DELETE requests with our top-level router.
+1. If your Go application is serving and rendering the 'entrypoint' (`index.html`) of a Single Page
+   Application, then you can inject the CSRF token into a `meta` tag on page load and use JavaScript
+   to parse it before making any AJAX calls. This approach is simple, doesn't require multiple
+   round-trips to the server, but does require your Go application.
+
+2. If (for some reason) that's not possible, you can send the token in a HTTP header. This does
+   require that the front-end application makes an additional HTTP request to obtain a cookie and
+   the token.
+
+> Note: We're using [gorilla/mux's](http://www.gorillatoolkit.org/pkg/mux) sub-routers,
+as we don't handle any POST/PUT/DELETE requests with our top-level router and therefore don't need
+the CSRF middleware there.
+
+
+#### The <meta> Approach
+
+Call `csrf.Token(r)` to get the token, and then use `html/template` to render it inside a `<meta>`
+tag:
+
+```go
+...
+...
+...
+```
+
+#### Response Header
+
+Send the token in a HTTP (response) header, remembering that the application will have to fetch a
+valid cookie & token ahead-of-time;:
 
 ```go
 package main
