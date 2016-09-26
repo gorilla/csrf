@@ -110,7 +110,7 @@ type options struct {
 //	func GetSignupForm(w http.ResponseWriter, r *http.Request) {
 //		// signup_form.tmpl just needs a {{ .csrfField }} template tag for
 //		// csrf.TemplateField to inject the CSRF token into. Easy!
-//		t.ExecuteTemplate(w, "signup_form.tmpl", map[string]interface{
+//		t.ExecuteTemplate(w, "signup_form.tmpl", map[string]interface{}{
 //			csrf.TemplateTag: csrf.TemplateField(r),
 //		})
 //		// We could also retrieve the token directly from csrf.Token(r) and
