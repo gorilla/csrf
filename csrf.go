@@ -115,7 +115,7 @@ type options struct {
 //		})
 //		// We could also retrieve the token directly from csrf.Token(r) and
 //		// set it in the request header - w.Header.Set("X-CSRF-Token", token)
-//		// This is useful if your sending JSON to clients or a front-end JavaScript
+//		// This is useful if you're sending JSON to clients or a front-end JavaScript
 //		// framework.
 //	}
 //
