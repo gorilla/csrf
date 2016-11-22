@@ -130,7 +130,7 @@ func main() {
     r := mux.NewRouter()
 
     api := r.PathPrefix("/api").Subrouter()
-    api.HandleFunc("/user/:id", GetUser).Methods("GET")
+    api.HandleFunc("/user/{id}", GetUser).Methods("GET")
 
     http.ListenAndServe(":8000",
         csrf.Protect([]byte("32-byte-long-auth-key"))(r))
