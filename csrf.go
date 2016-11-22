@@ -89,21 +89,25 @@ type options struct {
 //	package main
 //
 //	import (
-//		"github.com/elithrar/protect"
+//		"html/template"
+//
+//		"github.com/gorilla/csrf"
 //		"github.com/gorilla/mux"
 //	)
 //
+//	var t = template.Must(template.New("signup_form.tmpl").Parse(form))
+//
 //	func main() {
-//	  r := mux.NewRouter()
+//		r := mux.NewRouter()
 //
-//	  mux.HandlerFunc("/signup", GetSignupForm)
-//	  // POST requests without a valid token will return a HTTP 403 Forbidden.
-//	  mux.HandlerFunc("/signup/post", PostSignupForm)
+//		r.HandleFunc("/signup", GetSignupForm)
+//		// POST requests without a valid token will return a HTTP 403 Forbidden.
+//		r.HandleFunc("/signup/post", PostSignupForm)
 //
-//	  // Add the middleware to your router.
-//	  http.ListenAndServe(":8000",
-//            // Note that the authentication key provided should be 32 bytes
-//            // long and persist across application restarts.
+//		// Add the middleware to your router.
+//		http.ListenAndServe(":8000",
+//		// Note that the authentication key provided should be 32 bytes
+//		// long and persist across application restarts.
 //			  csrf.Protect([]byte("32-byte-long-auth-key"))(r))
 //	}
 //
