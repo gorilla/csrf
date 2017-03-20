@@ -1,5 +1,5 @@
 # gorilla/csrf
-[![GoDoc](https://godoc.org/github.com/gorilla/csrf?status.svg)](https://godoc.org/github.com/gorilla/csrf) [![Build Status](https://travis-ci.org/gorilla/csrf.svg?branch=master)](https://travis-ci.org/gorilla/csrf)
+[![GoDoc](https://godoc.org/github.com/gorilla/csrf?status.svg)](https://godoc.org/github.com/gorilla/csrf) [![Build Status](https://travis-ci.org/gorilla/csrf.svg?branch=master)](https://travis-ci.org/gorilla/csrf) [![Sourcegraph](https://sourcegraph.com/github.com/gorilla/csrf/-/badge.svg)](https://sourcegraph.com/github.com/csrf/securecookie?badge)
 
 gorilla/csrf is a HTTP middleware library that provides [cross-site request
 forgery](http://blog.codinghorror.com/preventing-csrf-and-xsrf-attacks/) (CSRF)
