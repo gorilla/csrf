@@ -135,6 +135,10 @@ providing a JSON API:
         w.Write(b)
     }
 
+If you're writing a client that's supposed to mimic browser behavior, make sure to
+send back the CSRF cookie (the default name is _gorilla_csrf, but this can be changed
+with the CookieName Option) along with either the X-CSRF-Token header or the gorilla.csrf.Token form field.
+
 In addition: getting CSRF protection right is important, so here's some background:
 
     * This library generates unique-per-request (masked) tokens as a mitigation
