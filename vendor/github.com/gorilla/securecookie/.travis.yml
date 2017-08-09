@@ -11,9 +11,6 @@ matrix:
   allow_failures:
     - go: tip
 
-install:
-  - # skip
-
 script:
   - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d .)
