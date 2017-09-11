@@ -132,11 +132,6 @@ func TestNoCookie(t *testing.T) {
 	s := http.NewServeMux()
 	p := Protect(testKey)(s)
 
-	var token string
-	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token = Token(r)
-	}))
-
 	// POST the token back in the header.
 	r, err := http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
 	if err != nil {
