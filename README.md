@@ -1,26 +1,27 @@
 # gorilla/csrf
+
 [![GoDoc](https://godoc.org/github.com/gorilla/csrf?status.svg)](https://godoc.org/github.com/gorilla/csrf) [![Build Status](https://travis-ci.org/gorilla/csrf.svg?branch=master)](https://travis-ci.org/gorilla/csrf) [![Sourcegraph](https://sourcegraph.com/github.com/gorilla/csrf/-/badge.svg)](https://sourcegraph.com/github.com/gorilla/csrf?badge)
 
 gorilla/csrf is a HTTP middleware library that provides [cross-site request
 forgery](http://blog.codinghorror.com/preventing-csrf-and-xsrf-attacks/) (CSRF)
- protection. It includes:
+protection. It includes:
 
-* The `csrf.Protect` middleware/handler provides CSRF protection on routes
+- The `csrf.Protect` middleware/handler provides CSRF protection on routes
   attached to a router or a sub-router.
-* A `csrf.Token` function that provides the token to pass into your response,
+- A `csrf.Token` function that provides the token to pass into your response,
   whether that be a HTML form or a JSON response body.
-* ... and a `csrf.TemplateField` helper that you can pass into your `html/template`
+- ... and a `csrf.TemplateField` helper that you can pass into your `html/template`
   templates to replace a `{{ .csrfField }}` template tag with a hidden input
   field.
 
 gorilla/csrf is designed to work with any Go web framework, including:
 
-* The [Gorilla](http://www.gorillatoolkit.org/) toolkit
-* Go's built-in [net/http](http://golang.org/pkg/net/http/) package
-* [Goji](https://goji.io) - see the [tailored fork](https://github.com/goji/csrf)
-* [Gin](https://github.com/gin-gonic/gin)
-* [Echo](https://github.com/labstack/echo)
-* ... and any other router/framework that rallies around Go's `http.Handler` interface.
+- The [Gorilla](http://www.gorillatoolkit.org/) toolkit
+- Go's built-in [net/http](http://golang.org/pkg/net/http/) package
+- [Goji](https://goji.io) - see the [tailored fork](https://github.com/goji/csrf)
+- [Gin](https://github.com/gin-gonic/gin)
+- [Echo](https://github.com/labstack/echo)
+- ... and any other router/framework that rallies around Go's `http.Handler` interface.
 
 gorilla/csrf is also compatible with middleware 'helper' libraries like
 [Alice](https://github.com/justinas/alice) and [Negroni](https://github.com/codegangsta/negroni).
@@ -28,16 +29,17 @@ gorilla/csrf is also compatible with middleware 'helper' libraries like
 ## Install
 
 With a properly configured Go toolchain:
+
 ```sh
 go get github.com/gorilla/csrf
 ```
 
 ## Examples
 
-* [HTML Forms](#html-forms)
-* [JavaScript Apps](#javascript-applications)
-* [Google App Engine](#google-app-engine)
-* [Setting Options](#setting-options)
+- [HTML Forms](#html-forms)
+- [JavaScript Apps](#javascript-applications)
+- [Google App Engine](#google-app-engine)
+- [Setting Options](#setting-options)
 
 gorilla/csrf is easy to use: add the middleware to your router with
 the below:
@@ -77,7 +79,10 @@ func main() {
     r := mux.NewRouter()
     r.HandleFunc("/signup", ShowSignupForm)
     // All POST requests without a valid token will return HTTP 403 Forbidden.
-    r.HandleFunc("/signup/post", SubmitSignupForm)
+    // We should also ensure that our mutating (non-idempotent) handler only
+    // matches on POST requests. We can check that here, at the router level, or
+    // within the handler itself via r.Method.
+    r.HandleFunc("/signup/post", SubmitSignupForm).Methods("POST")
 
     // Add the middleware to your router by wrapping it.
     http.ListenAndServe(":8000",
@@ -207,22 +212,22 @@ added, open an issue.
 
 Getting CSRF protection right is important, so here's some background:
 
-* This library generates unique-per-request (masked) tokens as a mitigation
+- This library generates unique-per-request (masked) tokens as a mitigation
   against the [BREACH attack](http://breachattack.com/).
-* The 'base' (unmasked) token is stored in the session, which means that
+- The 'base' (unmasked) token is stored in the session, which means that
   multiple browser tabs won't cause a user problems as their per-request token
   is compared with the base token.
-* Operates on a "whitelist only" approach where safe (non-mutating) HTTP methods
-  (GET, HEAD, OPTIONS, TRACE) are the *only* methods where token validation is not
+- Operates on a "whitelist only" approach where safe (non-mutating) HTTP methods
+  (GET, HEAD, OPTIONS, TRACE) are the _only_ methods where token validation is not
   enforced.
-* The design is based on the battle-tested
+- The design is based on the battle-tested
   [Django](https://docs.djangoproject.com/en/1.8/ref/csrf/) and [Ruby on
   Rails](http://api.rubyonrails.org/classes/ActionController/RequestForgeryProtection.html)
   approaches.
-* Cookies are authenticated and based on the [securecookie](https://github.com/gorilla/securecookie)
+- Cookies are authenticated and based on the [securecookie](https://github.com/gorilla/securecookie)
   library. They're also Secure (issued over HTTPS only) and are HttpOnly
   by default, because sane defaults are important.
-* Go's `crypto/rand` library is used to generate the 32 byte (256 bit) tokens
+- Go's `crypto/rand` library is used to generate the 32 byte (256 bit) tokens
   and the one-time-pad used for masking them.
 
 This library does not seek to be adventurous.
