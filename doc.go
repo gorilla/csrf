@@ -71,7 +71,10 @@ in order to protect malicious POST requests being made:
 		r := mux.NewRouter()
 		r.HandleFunc("/signup", ShowSignupForm)
 		// All POST requests without a valid token will return HTTP 403 Forbidden.
-		r.HandleFunc("/signup/post", SubmitSignupForm)
+		// We should also ensure that our mutating (non-idempotent) handler only
+		// matches on POST requests. We can check that here, at the router level, or
+		// within the handler itself via r.Method.
+		r.HandleFunc("/signup/post", SubmitSignupForm).Methods("POST")
 
 		// Add the middleware to your router by wrapping it.
 		http.ListenAndServe(":8000",
