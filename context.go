@@ -9,8 +9,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type csrfContext string
+
 func contextGet(r *http.Request, key string) (interface{}, error) {
-	val := r.Context().Value(key)
+	val := r.Context().Value(csrfContext(key))
 	if val == nil {
 		return nil, errors.Errorf("no value exists in the context for key %q", key)
 	}
@@ -20,7 +22,7 @@ func contextGet(r *http.Request, key string) (interface{}, error) {
 
 func contextSave(r *http.Request, key string, val interface{}) *http.Request {
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, key, val)
+	ctx = context.WithValue(ctx, csrfContext(key), val)
 	return r.WithContext(ctx)
 }
 
