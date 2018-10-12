@@ -16,7 +16,7 @@ protection. It includes:
 
 gorilla/csrf is designed to work with any Go web framework, including:
 
-- The [Gorilla](http://www.gorillatoolkit.org/) toolkit
+- The [Gorilla](https://www.gorillatoolkit.org/) toolkit
 - Go's built-in [net/http](http://golang.org/pkg/net/http/) package
 - [Goji](https://goji.io) - see the [tailored fork](https://github.com/goji/csrf)
 - [Gin](https://github.com/gin-gonic/gin)
@@ -120,7 +120,7 @@ This approach is useful if you're using a front-end JavaScript framework like
 React, Ember or Angular, or are providing a JSON API.
 
 We'll also look at applying selective CSRF protection using
-[gorilla/mux's](http://www.gorillatoolkit.org/pkg/mux) sub-routers,
+[gorilla/mux's](https://www.gorillatoolkit.org/pkg/mux) sub-routers,
 as we don't handle any POST/PUT/DELETE requests with our top-level router.
 
 ```go
