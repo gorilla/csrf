@@ -27,6 +27,7 @@ type cookieStore struct {
 	httpOnly bool
 	path     string
 	domain   string
+	samesite http.SameSite
 	sc       *securecookie.SecureCookie
 }
 
@@ -64,6 +65,7 @@ func (cs *cookieStore) Save(token []byte, w http.ResponseWriter) error {
 		HttpOnly: cs.httpOnly,
 		Secure:   cs.secure,
 		Path:     cs.path,
+		SameSite: cs.samesite,
 		Domain:   cs.domain,
 	}
 

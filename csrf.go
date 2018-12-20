@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/pkg/errors"
-
 	"github.com/gorilla/securecookie"
+	"github.com/pkg/errors"
 )
 
 // CSRF token length in bytes.
@@ -72,6 +71,7 @@ type options struct {
 	FieldName     string
 	ErrorHandler  http.Handler
 	CookieName    string
+	SameSite      http.SameSite
 }
 
 // Protect is HTTP middleware that provides Cross-Site Request Forgery
@@ -167,6 +167,7 @@ func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 				httpOnly: cs.opts.HttpOnly,
 				path:     cs.opts.Path,
 				domain:   cs.opts.Domain,
+				samesite: cs.opts.SameSite,
 				sc:       cs.sc,
 			}
 		}

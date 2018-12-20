@@ -7,9 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
-
 	"github.com/gorilla/securecookie"
+	"github.com/pkg/errors"
 )
 
 // Check store implementations
@@ -68,7 +67,7 @@ func TestCookieDecode(t *testing.T) {
 	// Test with a nil hash key
 	sc := securecookie.New(nil, nil)
 	sc.MaxAge(age)
-	st := &cookieStore{cookieName, age, true, true, "", "", sc}
+	st := &cookieStore{cookieName, age, true, true, "", "", http.SameSiteDefaultMode, sc}
 
 	// Set a fake cookie value so r.Cookie passes.
 	r.Header.Set("Cookie", fmt.Sprintf("%s=%s", cookieName, "notacookie"))
@@ -86,7 +85,7 @@ func TestCookieEncode(t *testing.T) {
 	// Test with a nil hash key
 	sc := securecookie.New(nil, nil)
 	sc.MaxAge(age)
-	st := &cookieStore{cookieName, age, true, true, "", "", sc}
+	st := &cookieStore{cookieName, age, true, true, "", "", http.SameSiteDefaultMode, sc}
 
 	rr := httptest.NewRecorder()
 

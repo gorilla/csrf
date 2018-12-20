@@ -58,6 +58,18 @@ func HttpOnly(h bool) Option {
 	}
 }
 
+// SameSite allows a server define a cookie attribute making it impossible to
+// the browser send this cookie along with cross-site requests. The main goal
+// is mitigate the risk of cross-origin information leakage, and provides some
+// protection against cross-site request forgery attacks.
+//
+// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details
+func SameSite(s http.SameSite) Option {
+	return func(cs *csrf) {
+		cs.opts.SameSite = s
+	}
+}
+
 // ErrorHandler allows you to change the handler called when CSRF request
 // processing encounters an invalid token or request. A typical use would be to
 // provide a handler that returns a static HTML file with a HTTP 403 status. By

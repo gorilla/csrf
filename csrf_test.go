@@ -52,7 +52,7 @@ func TestCookieOptions(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	p := Protect(testKey, CookieName("nameoverride"), Secure(false), HttpOnly(false), Path("/pathoverride"), Domain("domainoverride"), MaxAge(173))(s)
+	p := Protect(testKey, CookieName("nameoverride"), Secure(false), HttpOnly(false), Path("/pathoverride"), Domain("domainoverride"), MaxAge(173), SameSite(http.SameSiteLaxMode))(s)
 	p.ServeHTTP(rr, r)
 
 	if rr.Header().Get("Set-Cookie") == "" {
@@ -74,6 +74,55 @@ func TestCookieOptions(t *testing.T) {
 	}
 	if !strings.Contains(cookie, "Max-Age=173") {
 		t.Fatalf("cookie does not respect MaxAge option: got %v want %v", cookie, "Max-Age=173")
+	}
+	if !strings.Contains(cookie, "SameSite=Lax") {
+		t.Fatalf("cookie does not respect SameSite option: got %v want %v", cookie, "SameSite=Lax")
+	}
+}
+
+// TestCookieSameSiteOption is a test to make sure SameSite option is set properly
+func TestCookieSameSiteOption(t *testing.T) {
+	s := http.NewServeMux()
+	s.HandleFunc("/", testHandler)
+
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+
+	// SameSite default mode
+	p := Protect(testKey, CookieName("nameoverride"))(s)
+	p.ServeHTTP(rr, r)
+
+	if rr.Header().Get("Set-Cookie") == "" {
+		t.Fatalf("cookie not set: got %q", rr.Header().Get("Set-Cookie"))
+	}
+
+	cookie := rr.Header().Get("Set-Cookie")
+	if strings.Contains(cookie, "SameSite") {
+		t.Fatalf("cookie does not respect SameSite default option: got %v want %v", cookie, "")
+	}
+
+	// SameSite Lax
+	rr = httptest.NewRecorder()
+	p = Protect(testKey, SameSite(http.SameSiteLaxMode))(s)
+	p.ServeHTTP(rr, r)
+
+	cookie = rr.Header().Get("Set-Cookie")
+	if !strings.Contains(cookie, "SameSite=Lax") {
+		t.Fatalf("cookie does not respect SameSite option: got %v want %v", cookie, "SameSite=Lax")
+	}
+
+	// SameSite Strict
+	rr = httptest.NewRecorder()
+	p = Protect(testKey, SameSite(http.SameSiteStrictMode))(s)
+	p.ServeHTTP(rr, r)
+
+	cookie = rr.Header().Get("Set-Cookie")
+	if !strings.Contains(cookie, "SameSite=Strict") {
+		t.Fatalf("cookie does not respect SameSite option: got %v want %v", cookie, "SameSite=Strict")
 	}
 }
 
