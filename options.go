@@ -25,8 +25,8 @@ func Domain(domain string) Option {
 	}
 }
 
-// Paths that you want excluded from the CSRF check, for example endpoints that
-// would receive webhooks.
+// Exclude paths from CSRF checks, for example endpoints that would receive
+// webhooks.
 func Exclude(paths ...string) Option {
 	return func(cs *csrf) {
 		cs.opts.Exclude = paths
