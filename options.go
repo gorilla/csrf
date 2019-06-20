@@ -25,6 +25,14 @@ func Domain(domain string) Option {
 	}
 }
 
+// Paths that you want excluded from the CSRF check, for example endpoints that
+// would receive webhooks.
+func Exclude(paths ...string) Option {
+	return func(cs *csrf) {
+		cs.opts.Exclude = paths
+	}
+}
+
 // Path sets the cookie path. Defaults to the path the cookie was issued from
 // (recommended).
 //

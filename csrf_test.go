@@ -41,6 +41,27 @@ func TestProtect(t *testing.T) {
 	}
 }
 
+// TestExclude is a test to make sure that certain paths can be excluded from
+// the CSRF check.
+func TestExclude(t *testing.T) {
+	s := http.NewServeMux()
+	s.HandleFunc("/", testHandler)
+
+	p := Protect(testKey, Exclude("/"))(s)
+	rr := httptest.NewRecorder()
+
+	r, err := http.NewRequest("POST", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("middleware failed to pass to the next handler: got %v want %v", rr.Code, http.StatusOK)
+	}
+}
+
 // TestCookieOptions is a test to make sure the middleware correctly sets cookie options
 func TestCookieOptions(t *testing.T) {
 	s := http.NewServeMux()

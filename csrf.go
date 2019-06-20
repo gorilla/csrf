@@ -61,9 +61,10 @@ type csrf struct {
 
 // options contains the optional settings for the CSRF middleware.
 type options struct {
-	MaxAge int
-	Domain string
-	Path   string
+	MaxAge  int
+	Domain  string
+	Exclude []string
+	Path    string
 	// Note that the function and field names match the case of the associated
 	// http.Cookie field instead of the "correct" HTTPOnly name that golint suggests.
 	HttpOnly      bool
@@ -184,6 +185,13 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				cs.h.ServeHTTP(w, r)
 				return
 			}
+		}
+	}
+
+	for _, path := range cs.opts.Exclude {
+		if r.URL.Path == path {
+			cs.h.ServeHTTP(w, r)
+			return
 		}
 	}
 

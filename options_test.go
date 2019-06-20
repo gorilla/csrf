@@ -6,12 +6,27 @@ import (
 	"testing"
 )
 
+func eqslice(s1 []string, s2 []string) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+
+	for i := range s1 {
+		if s1[i] != s2[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Tests that options functions are applied to the middleware.
 func TestOptions(t *testing.T) {
 	var h http.Handler
 
 	age := 86400
 	domain := "gorillatoolkit.org"
+	exclude := []string{"/path1", "/path2", "/path3"}
 	path := "/forms/"
 	header := "X-AUTH-TOKEN"
 	field := "authenticity_token"
@@ -21,6 +36,7 @@ func TestOptions(t *testing.T) {
 	testOpts := []Option{
 		MaxAge(age),
 		Domain(domain),
+		Exclude(exclude...),
 		Path(path),
 		HttpOnly(false),
 		Secure(false),
@@ -39,6 +55,10 @@ func TestOptions(t *testing.T) {
 
 	if cs.opts.Domain != domain {
 		t.Errorf("Domain not set correctly: got %v want %v", cs.opts.Domain, domain)
+	}
+
+	if !eqslice(cs.opts.Exclude, exclude) {
+		t.Errorf("Exclude not set correctly: got %v want %v", cs.opts.Exclude, exclude)
 	}
 
 	if cs.opts.Path != path {
