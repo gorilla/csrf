@@ -1,0 +1,90 @@
+version: 2.0
+
+jobs:
+  # Base test configuration for Go library tests Each distinct version should
+  # inherit this base, and override (at least) the container image used.
+  "test": &test
+    docker:
+      - image: circleci/golang:latest
+    environment:
+      GO111MODULE: "on"
+    working_directory: /go/src/github.com/gorilla/csrf
+    steps: &steps
+      - checkout
+      - run: go version
+      - run: go get -t -v ./...
+      - run: diff -u <(echo -n) <(gofmt -d .)
+      - run: if [[ "$LATEST" = true ]]; then go vet -v ./...; fi
+      - run: go test -v -race ./...
+
+  "latest":
+    <<: *test
+    environment:
+      LATEST: "true"
+      GO111MODULE: "on"
+
+  "1.12":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.12
+
+  "1.11":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.11
+
+  "1.10":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.10
+
+  "1.9":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.9
+
+  "1.8":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.8
+
+  "1.7":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.7
+
+  "1.6":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.6
+
+  "1.5":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.5
+
+  "1.4":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.4
+
+  "1.3":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.3
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - "latest"
+      - "1.12"
+      - "1.11"
+      - "1.10"
+      - "1.9"
+      - "1.8"
+      - "1.7"
+      - "1.6"
+      - "1.5"
+      - "1.4"
+      - "1.3"
