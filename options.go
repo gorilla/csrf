@@ -25,11 +25,12 @@ func Domain(domain string) Option {
 	}
 }
 
-// Exclude paths from CSRF checks, for example endpoints that would receive
-// webhooks.
-func Exclude(paths ...string) Option {
+// Exclude allows for a set of patterns to be excluded from a CSRF check. Each
+// string will be matched against as a regular expression, for example both of
+// the following would be valid: "/example", "^/api/[a-z]+$"
+func Exclude(patterns ...string) Option {
 	return func(cs *csrf) {
-		cs.opts.Exclude = paths
+		cs.opts.Exclude = patterns
 	}
 }
 

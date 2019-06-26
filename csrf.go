@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"github.com/pkg/errors"
 
@@ -188,8 +189,20 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for _, path := range cs.opts.Exclude {
-		if r.URL.Path == path {
+	for _, pattern := range cs.opts.Exclude {
+		if pattern == "" {
+			continue
+		}
+
+		matched, err := regexp.Match(pattern, []byte(r.URL.Path))
+
+		if err != nil {
+			r = envError(r, err)
+			cs.opts.ErrorHandler.ServeHTTP(w, r)
+			return
+		}
+
+		if matched {
 			cs.h.ServeHTTP(w, r)
 			return
 		}
