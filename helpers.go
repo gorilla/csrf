@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Token returns a masked CSRF token ready for passing into HTML template or
@@ -200,4 +201,18 @@ func contains(vals []string, s string) bool {
 // envError stores a CSRF error in the request context.
 func envError(r *http.Request, err error) *http.Request {
 	return contextSave(r, errorKey, err)
+}
+
+// KeyMatch determines whether key1 matches the pattern of key2 (similar to RESTful path), key2 can contain a *.
+// For example, "/foo/bar" matches "/foo/*"
+func KeyMatch(key1 string, key2 string) bool {
+	i := strings.Index(key2, "*")
+	if i == -1 {
+		return key1 == key2
+	}
+
+	if len(key1) > i {
+		return key1[:i] == key2[:i]
+	}
+	return key1 == key2[:i]
 }
