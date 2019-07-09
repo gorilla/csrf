@@ -41,6 +41,45 @@ func TestProtect(t *testing.T) {
 	}
 }
 
+// TestExclude is a test to make sure that certain patterns can be excluded from
+// the CSRF check.
+func TestExclude(t *testing.T) {
+	var excludeTests = []struct {
+		path          string
+		exclude       string
+		shouldExclude bool
+	}{
+		{"/admin", "", false},
+		{"/api/one", "/api/*", true},
+		{"/api", "/api/*", false},
+		{"/webhook", "/webhook", true},
+	}
+
+	for _, test := range excludeTests {
+		rr := httptest.NewRecorder()
+
+		s := http.NewServeMux()
+		s.HandleFunc(test.path, testHandler)
+
+		r, err := http.NewRequest("POST", test.path, nil)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		p := Protect(testKey, Exclude(test.exclude))(s)
+		p.ServeHTTP(rr, r)
+
+		if test.shouldExclude && rr.Code != http.StatusOK {
+			t.Fatalf("middleware failed to pass to the next handler: got %v want %v", rr.Code, http.StatusOK)
+		}
+
+		if !test.shouldExclude && rr.Code != http.StatusForbidden {
+			t.Fatalf("middleware failed to pass to the next handler: got %v want %v", rr.Code, http.StatusForbidden)
+		}
+	}
+}
+
 // TestCookieOptions is a test to make sure the middleware correctly sets cookie options
 func TestCookieOptions(t *testing.T) {
 	s := http.NewServeMux()
