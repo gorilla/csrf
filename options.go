@@ -37,6 +37,14 @@ func Path(p string) Option {
 	}
 }
 
+// Exclude allows for a set of patterns to be excluded from a CSRF check.
+//Valid patterns are: "/bar", "/foo/*". For example, "/foo/bar" matches "/foo/*".
+func Exclude(patterns ...string) Option {
+	return func(cs *csrf) {
+		cs.opts.Exclude = patterns
+	}
+}
+
 // Secure sets the 'Secure' flag on the cookie. Defaults to true (recommended).
 // Set this to 'false' in your development environment otherwise the cookie won't
 // be sent over an insecure channel. Setting this via the presence of a 'DEV'
