@@ -300,3 +300,23 @@ func TestUnsafeSkipCSRFCheck(t *testing.T) {
 			status, teapot)
 	}
 }
+
+func TestKeyMatch(t *testing.T) {
+	var excludeTests = []struct {
+		path          string
+		exclude       string
+		shouldExclude bool
+	}{
+		{"/admin", "", false},
+		{"/api/one", "/api/*", true},
+		{"/api", "/api/*", false},
+		{"/webhook", "/webhook", true},
+	}
+
+	for _, test := range excludeTests {
+		if v := KeyMatch(test.path, test.exclude); v != test.shouldExclude {
+			t.Fatalf("keymatch failed: got %v want %v", v, test.shouldExclude)
+		}
+	}
+
+}
