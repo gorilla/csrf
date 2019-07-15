@@ -281,9 +281,11 @@ func TestTrustedReferer(t *testing.T) {
 		shouldPass    bool
 	}{
 		{[]string{"golang.org"}, true},
-		{[]string{"golang.org", "api.example.com"}, true},
-		{[]string{"https://example.com/foo"}, false},
-		// etc
+		{[]string{"api.example.com", "golang.org"}, true},
+		{[]string{"http://golang.org"}, false},
+		{[]string{"https://golang.org"}, false},
+		{[]string{"http://example.com"}, false},
+		{[]string{"example.com"}, false},
 	}
 
 	for _, item := range testTable {
