@@ -3,7 +3,6 @@ package csrf
 import (
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 )
@@ -278,13 +277,7 @@ func TestBadReferer(t *testing.T) {
 func TestTrustedReferer(t *testing.T) {
 	s := http.NewServeMux()
 
-	trustedOrigin, err := url.Parse("http://golang.org/")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	p := Protect(testKey, TrustedOrigins([]*url.URL{trustedOrigin}))(s)
+	p := Protect(testKey, TrustedOrigins([]string{"golang.org"}))(s)
 
 	var token string
 	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

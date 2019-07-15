@@ -2,7 +2,6 @@ package csrf
 
 import (
 	"net/http"
-	"net/url"
 )
 
 // Option describes a functional option for configuring the CSRF handler.
@@ -106,7 +105,7 @@ func CookieName(name string) Option {
 // One valid use case for this option is where you have one domain for the backend
 // and one domain for the frontend of your application, so you can send
 // requests directly from the frontend to the backend with valid CSRF requests.
-func TrustedOrigins(origins []*url.URL) Option {
+func TrustedOrigins(origins []string) Option {
 	return func(cs *csrf) {
 		cs.opts.TrustedOrigins = origins
 	}

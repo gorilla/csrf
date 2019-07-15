@@ -72,7 +72,7 @@ type options struct {
 	FieldName      string
 	ErrorHandler   http.Handler
 	CookieName     string
-	TrustedOrigins []*url.URL
+	TrustedOrigins []string
 }
 
 // Protect is HTTP middleware that provides Cross-Site Request Forgery
@@ -238,7 +238,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if !valid {
 				for _, trustedOrigin := range cs.opts.TrustedOrigins {
-					if sameOrigin(trustedOrigin, referer) {
+					if referer.Host == trustedOrigin {
 						valid = true
 						break
 					}
