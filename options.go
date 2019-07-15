@@ -99,12 +99,11 @@ func CookieName(name string) Option {
 	}
 }
 
-// TrustedOrigins configures a set of origins (referrer) that are trusted for
-// unsafe requests in addition to the origin of the server itself
-//
-// One valid use case for this option is where you have one domain for the backend
-// and one domain for the frontend of your application, so you can send
-// requests directly from the frontend to the backend with valid CSRF requests.
+// TrustedOrigins configures a set of origins (Referers) that are considered as trusted.
+// This will allow cross-domain CSRF use-cases - e.g. where the front-end is served
+// from a different domain than the API server - to correctly pass a CSRF check.
+
+// You should only provide origins you own or have full control over.
 func TrustedOrigins(origins []string) Option {
 	return func(cs *csrf) {
 		cs.opts.TrustedOrigins = origins
