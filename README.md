@@ -199,6 +199,49 @@ try {
 }
 ```
 
+If you plan to host your JavaScript application on another domain, you can use the Trusted Origins
+feature to allow the host of your JavaScript application to make requests to your Go application. Observe the example below:
+
+
+```go
+package main
+
+import (
+    "github.com/gorilla/csrf"
+    "github.com/gorilla/mux"
+)
+
+func main() {
+    r := mux.NewRouter()
+    csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key"), csrf.TrustedOrigin([]string{"ui.domain.com"}))
+
+    api := r.PathPrefix("/api").Subrouter()
+    api.Use(csrfMiddleware)
+    api.HandleFunc("/user/{id}", GetUser).Methods("GET")
+
+    http.ListenAndServe(":8000", r)
+}
+
+func GetUser(w http.ResponseWriter, r *http.Request) {
+    // Authenticate the request, get the id from the route params,
+    // and fetch the user from the DB, etc.
+
+    // Get the token and pass it in the CSRF header. Our JSON-speaking client
+    // or JavaScript framework can now read the header and return the token in
+    // in its own "X-CSRF-Token" request header on the subsequent POST.
+    w.Header().Set("X-CSRF-Token", csrf.Token(r))
+    b, err := json.Marshal(user)
+    if err != nil {
+        http.Error(w, err.Error(), 500)
+        return
+    }
+
+    w.Write(b)
+}
+```
+
+On the example above, you're authorizing requests from `ui.domain.com` to make valid CSRF requests to your application, so you can have your API server on another domain without problems.
+
 ### Google App Engine
 
 If you're using [Google App

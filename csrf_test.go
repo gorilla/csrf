@@ -272,6 +272,70 @@ func TestBadReferer(t *testing.T) {
 	}
 }
 
+// TestTrustedReferer checks that HTTPS requests with a Referer that does not
+// match the request URL correctly but is a trusted origin pass CSRF validation.
+func TestTrustedReferer(t *testing.T) {
+
+	testTable := []struct {
+		trustedOrigin []string
+		shouldPass    bool
+	}{
+		{[]string{"golang.org"}, true},
+		{[]string{"api.example.com", "golang.org"}, true},
+		{[]string{"http://golang.org"}, false},
+		{[]string{"https://golang.org"}, false},
+		{[]string{"http://example.com"}, false},
+		{[]string{"example.com"}, false},
+	}
+
+	for _, item := range testTable {
+		s := http.NewServeMux()
+
+		p := Protect(testKey, TrustedOrigins(item.trustedOrigin))(s)
+
+		var token string
+		s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token = Token(r)
+		}))
+
+		// Obtain a CSRF cookie via a GET request.
+		r, err := http.NewRequest("GET", "https://www.gorillatoolkit.org/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		p.ServeHTTP(rr, r)
+
+		// POST the token back in the header.
+		r, err = http.NewRequest("POST", "https://www.gorillatoolkit.org/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		setCookie(rr, r)
+		r.Header.Set("X-CSRF-Token", token)
+
+		// Set a non-matching Referer header.
+		r.Header.Set("Referer", "http://golang.org/")
+
+		rr = httptest.NewRecorder()
+		p.ServeHTTP(rr, r)
+
+		if item.shouldPass {
+			if rr.Code != http.StatusOK {
+				t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+					rr.Code, http.StatusOK)
+			}
+		} else {
+			if rr.Code != http.StatusForbidden {
+				t.Fatalf("middleware failed reject a non-matching Referer header: got %v want %v",
+					rr.Code, http.StatusForbidden)
+			}
+		}
+	}
+}
+
 // Requests with a valid Referer should pass.
 func TestWithReferer(t *testing.T) {
 	s := http.NewServeMux()

@@ -1,6 +1,8 @@
 package csrf
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Option describes a functional option for configuring the CSRF handler.
 type Option func(*csrf)
@@ -94,6 +96,17 @@ func FieldName(name string) Option {
 func CookieName(name string) Option {
 	return func(cs *csrf) {
 		cs.opts.CookieName = name
+	}
+}
+
+// TrustedOrigins configures a set of origins (Referers) that are considered as trusted.
+// This will allow cross-domain CSRF use-cases - e.g. where the front-end is served
+// from a different domain than the API server - to correctly pass a CSRF check.
+//
+// You should only provide origins you own or have full control over.
+func TrustedOrigins(origins []string) Option {
+	return func(cs *csrf) {
+		cs.opts.TrustedOrigins = origins
 	}
 }
 
