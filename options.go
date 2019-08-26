@@ -8,7 +8,8 @@ import (
 type Option func(*csrf)
 
 // MaxAge sets the maximum age (in seconds) of a CSRF token's underlying cookie.
-// Defaults to 12 hours.
+// Defaults to 12 hours. Call csrf.MaxAge(0) to explicitly set session-only
+// cookies.
 func MaxAge(age int) Option {
 	return func(cs *csrf) {
 		cs.opts.MaxAge = age
@@ -130,6 +131,9 @@ func parseOptions(h http.Handler, opts ...Option) *csrf {
 	// Set here to allow package users to override the default.
 	cs.opts.Secure = true
 	cs.opts.HttpOnly = true
+
+	// Default; only override this if the package user explicitly calls MaxAge(0)
+	cs.opts.MaxAge = defaultAge
 
 	// Range over each options function and apply it
 	// to our csrf type to configure it. Options functions are
