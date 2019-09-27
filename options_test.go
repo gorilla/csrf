@@ -24,6 +24,7 @@ func TestOptions(t *testing.T) {
 		Path(path),
 		HttpOnly(false),
 		Secure(false),
+		SameSite(SameSiteStrictMode),
 		RequestHeader(header),
 		FieldName(field),
 		ErrorHandler(http.HandlerFunc(errorHandler)),
@@ -51,6 +52,10 @@ func TestOptions(t *testing.T) {
 
 	if cs.opts.Secure != false {
 		t.Errorf("Secure not set correctly: got %v want %v", cs.opts.Secure, false)
+	}
+
+	if cs.opts.SameSite != SameSiteStrictMode {
+		t.Errorf("SameSite not set correctly: got %v want %v", cs.opts.SameSite, SameSiteStrictMode)
 	}
 
 	if cs.opts.RequestHeader != header {
