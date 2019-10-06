@@ -63,10 +63,6 @@ func HttpOnly(h bool) Option {
 
 // SameSite sets the cookie SameSite attribute. Defaults to blank to maintain backwards
 // compatibility, however, Strict is recommended. This option is only available for go 1.11+.
-//
-// This instructs clients to only respond with cookie for that path and its
-// subpaths - i.e. a cookie issued from "/register" would be included in requests
-// to "/register/step2" and "/register/submit".
 func SameSite(s SameSiteMode) Option {
 	return func(cs *csrf) {
 		cs.opts.SameSite = s
