@@ -61,6 +61,26 @@ func HttpOnly(h bool) Option {
 	}
 }
 
+// SameSite sets the cookie SameSite attribute. Defaults to blank to maintain
+// backwards compatibility, however, Strict is recommended.
+//
+// SameSite(SameSiteStrictMode) will prevent the cookie from being sent by the
+// browser to the target site in all cross-site browsing context, even when
+// following a regular link (GET request).
+//
+// SameSite(SameSiteLaxMode) provides a reasonable balance between security and
+// usability for websites that want to maintain user's logged-in session after
+// the user arrives from an external link. The session cookie would be allowed
+// when following a regular link from an external website while blocking it in
+// CSRF-prone request methods (e.g. POST).
+//
+// This option is only available for go 1.11+.
+func SameSite(s SameSiteMode) Option {
+	return func(cs *csrf) {
+		cs.opts.SameSite = s
+	}
+}
+
 // ErrorHandler allows you to change the handler called when CSRF request
 // processing encounters an invalid token or request. A typical use would be to
 // provide a handler that returns a static HTML file with a HTTP 403 status. By
@@ -131,6 +151,9 @@ func parseOptions(h http.Handler, opts ...Option) *csrf {
 	// Set here to allow package users to override the default.
 	cs.opts.Secure = true
 	cs.opts.HttpOnly = true
+
+	// Default to blank to maintain backwards compatibility
+	cs.opts.SameSite = SameSiteDefaultMode
 
 	// Default; only override this if the package user explicitly calls MaxAge(0)
 	cs.opts.MaxAge = defaultAge

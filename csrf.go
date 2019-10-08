@@ -52,6 +52,22 @@ var (
 	ErrBadToken = errors.New("CSRF token invalid")
 )
 
+// SameSiteMode allows a server to define a cookie attribute making it impossible for
+// the browser to send this cookie along with cross-site requests. The main
+// goal is to mitigate the risk of cross-origin information leakage, and provide
+// some protection against cross-site request forgery attacks.
+//
+// See https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00 for details.
+type SameSiteMode int
+
+// SameSite options
+const (
+	SameSiteDefaultMode SameSiteMode = iota + 1
+	SameSiteLaxMode
+	SameSiteStrictMode
+	SameSiteNoneMode
+)
+
 type csrf struct {
 	h    http.Handler
 	sc   *securecookie.SecureCookie
@@ -68,6 +84,7 @@ type options struct {
 	// http.Cookie field instead of the "correct" HTTPOnly name that golint suggests.
 	HttpOnly       bool
 	Secure         bool
+	SameSite       SameSiteMode
 	RequestHeader  string
 	FieldName      string
 	ErrorHandler   http.Handler
@@ -166,6 +183,7 @@ func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 				maxAge:   cs.opts.MaxAge,
 				secure:   cs.opts.Secure,
 				httpOnly: cs.opts.HttpOnly,
+				sameSite: cs.opts.SameSite,
 				path:     cs.opts.Path,
 				domain:   cs.opts.Domain,
 				sc:       cs.sc,

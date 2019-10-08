@@ -1,4 +1,5 @@
-// +build go1.11
+// +build !go1.11
+// file for compatibility with go versions prior to 1.11
 
 package csrf
 
@@ -66,7 +67,6 @@ func (cs *cookieStore) Save(token []byte, w http.ResponseWriter) error {
 		MaxAge:   cs.maxAge,
 		HttpOnly: cs.httpOnly,
 		Secure:   cs.secure,
-		SameSite: http.SameSite(cs.sameSite),
 		Path:     cs.path,
 		Domain:   cs.domain,
 	}
