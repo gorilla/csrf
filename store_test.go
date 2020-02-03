@@ -159,3 +159,33 @@ func TestSameSizeSet(t *testing.T) {
 		t.Fatalf("cookie incorrectly does not have the SameSite attribute set: got %q", cookie)
 	}
 }
+
+// TestSamesiteBackwardsCompat tests that the default set of options do not set
+// any SameSite attribute.
+func TestSamesiteBackwardsCompat(t *testing.T) {
+	s := http.NewServeMux()
+	s.HandleFunc("/", testHandler)
+
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p := Protect(testKey)(s)
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+			rr.Code, http.StatusOK)
+	}
+
+	cookie := rr.Header().Get("Set-Cookie")
+	if cookie == "" {
+		t.Fatalf("cookie not get set-cookie header: got headers %v", rr.Header())
+	}
+
+	if strings.Contains(cookie, "SameSite") {
+		t.Fatalf("cookie should not contain the substring 'SameSite' by default, but did: %q", cookie)
+	}
+}

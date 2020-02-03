@@ -152,9 +152,6 @@ func parseOptions(h http.Handler, opts ...Option) *csrf {
 	cs.opts.Secure = true
 	cs.opts.HttpOnly = true
 
-	// Default to blank to maintain backwards compatibility
-	cs.opts.SameSite = SameSiteDefaultMode
-
 	// Default; only override this if the package user explicitly calls MaxAge(0)
 	cs.opts.MaxAge = defaultAge
 
