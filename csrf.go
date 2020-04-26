@@ -62,6 +62,9 @@ type SameSiteMode int
 
 // SameSite options
 const (
+	// SameSiteDefaultMode sets an invalid SameSite header which defaults to
+	// 'Lax' in most browsers, but may cause some browsers to ignore the cookie
+	// entirely.
 	SameSiteDefaultMode SameSiteMode = iota + 1
 	SameSiteLaxMode
 	SameSiteStrictMode
