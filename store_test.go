@@ -160,9 +160,9 @@ func TestSameSizeSet(t *testing.T) {
 	}
 }
 
-// TestSamesiteBackwardsCompat tests that the default set of options do not set
-// any SameSite attribute.
-func TestSamesiteBackwardsCompat(t *testing.T) {
+// TestSameSiteDefault tests that the default set of options
+// set SameSite=Lax on the CSRF cookie.
+func TestSameSiteDefaultLaxMode(t *testing.T) {
 	s := http.NewServeMux()
 	s.HandleFunc("/", testHandler)
 
@@ -182,10 +182,11 @@ func TestSamesiteBackwardsCompat(t *testing.T) {
 
 	cookie := rr.Header().Get("Set-Cookie")
 	if cookie == "" {
-		t.Fatalf("cookie not get set-cookie header: got headers %v", rr.Header())
+		t.Fatalf("cookie not get Set-Cookie header: got headers %v", rr.Header())
 	}
 
-	if strings.Contains(cookie, "SameSite") {
-		t.Fatalf("cookie should not contain the substring 'SameSite' by default, but did: %q", cookie)
+	sameSiteLax := "SameSite=Lax"
+	if !strings.Contains(cookie, sameSiteLax) {
+		t.Fatalf("cookie should contain %q by default: got %s", sameSiteLax, cookie)
 	}
 }

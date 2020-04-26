@@ -23,6 +23,16 @@ jobs:
       LATEST: "true"
       GO111MODULE: "on"
 
+  "1.14":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.14
+
+  "1.13":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.13
+
   "1.12":
     <<: *test
     docker:
@@ -58,6 +68,8 @@ workflows:
   build:
     jobs:
       - "latest"
+      - "1.14"
+      - "1.13"
       - "1.12"
       - "1.11"
       - "1.10"

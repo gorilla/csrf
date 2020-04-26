@@ -62,9 +62,10 @@ type SameSiteMode int
 
 // SameSite options
 const (
-	// SameSiteDefaultMode sets an invalid SameSite header which defaults to
-	// 'Lax' in most browsers, but may cause some browsers to ignore the cookie
-	// entirely.
+	// SameSiteDefaultMode sets the `SameSite` cookie attribute, which is
+	// invalid in some older browsers due to changes in the SameSite spec. These
+	// browsers will not send the cookie to the server.
+	// csrf uses SameSiteLaxMode (SameSite=Lax) as the default as of v1.7.0+
 	SameSiteDefaultMode SameSiteMode = iota + 1
 	SameSiteLaxMode
 	SameSiteStrictMode
