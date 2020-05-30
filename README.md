@@ -29,6 +29,18 @@ gorilla/csrf is designed to work with any Go web framework, including:
 gorilla/csrf is also compatible with middleware 'helper' libraries like
 [Alice](https://github.com/justinas/alice) and [Negroni](https://github.com/codegangsta/negroni).
 
+## Contents
+
+  * [Install](#install)
+  * [Examples](#examples)
+    + [HTML Forms](#html-forms)
+    + [JavaScript Applications](#javascript-applications)
+    + [Google App Engine](#google-app-engine)
+    + [Setting SameSite](#setting-samesite)
+    + [Setting Options](#setting-options)
+  * [Design Notes](#design-notes)
+  * [License](#license)
+
 ## Install
 
 With a properly configured Go toolchain:
