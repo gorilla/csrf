@@ -226,7 +226,7 @@ import (
 
 func main() {
     r := mux.NewRouter()
-    csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key"), csrf.TrustedOrigin([]string{"ui.domain.com"}))
+    csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key"), csrf.TrustedOrigins([]string{"ui.domain.com"}))
 
     api := r.PathPrefix("/api").Subrouter()
     api.Use(csrfMiddleware)
