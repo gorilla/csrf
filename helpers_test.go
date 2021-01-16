@@ -185,7 +185,7 @@ func TestXOR(t *testing.T) {
 
 	for _, token := range testTokens {
 		if res := xorToken(token.a, token.b); res != nil {
-			if bytes.Compare(res, token.expected) != 0 {
+			if !bytes.Equal(res, token.expected) {
 				t.Fatalf("xorBytes failed to return the expected result: got %v want %v",
 					res, token.expected)
 			}

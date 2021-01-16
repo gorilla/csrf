@@ -267,7 +267,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			if valid == false {
+			if !valid {
 				r = envError(r, ErrBadReferer)
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return
