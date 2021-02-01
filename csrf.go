@@ -274,14 +274,6 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// If the token returned from the session store is nil for non-idempotent
-		// ("unsafe") methods, call the error handler.
-		if realToken == nil {
-			r = envError(r, ErrNoToken)
-			cs.opts.ErrorHandler.ServeHTTP(w, r)
-			return
-		}
-
 		// Retrieve the combined token (pad + masked) token...
 		maskedToken, err := cs.requestToken(r)
 
