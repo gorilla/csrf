@@ -304,6 +304,21 @@ func main() {
 }
 ```
 
+### Cookie path
+
+By default, CSRF cookies are set on the path of the request.
+
+This can create issues, if the request is done from one path to a different path.
+
+You might want to set up a root path for all the cookies; that way, the CSRF will always work across all your paths.
+
+```
+    CSRF := csrf.Protect(
+      []byte("a-32-byte-long-key-goes-here"),
+      csrf.Path("/"),
+    )
+```
+
 ### Setting Options
 
 What about providing your own error handler and changing the HTTP header the
