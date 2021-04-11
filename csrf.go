@@ -276,7 +276,6 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Retrieve the combined token (pad + masked) token...
 		maskedToken, err := cs.requestToken(r)
-
 		if err != nil {
 			r = envError(r, ErrBadToken)
 			cs.opts.ErrorHandler.ServeHTTP(w, r)
