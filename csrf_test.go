@@ -374,6 +374,48 @@ func TestWithReferer(t *testing.T) {
 	}
 }
 
+// Requests without a token should fail with ErrNoToken.
+func TestNoTokenProvided(t *testing.T) {
+	var finalErr error
+
+	s := http.NewServeMux()
+	p := Protect(testKey, ErrorHandler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		finalErr = FailureReason(r)
+	})))(s)
+
+	var token string
+	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	}))
+
+	// Obtain a CSRF cookie via a GET request.
+	r, err := http.NewRequest("GET", "http://www.gorillatoolkit.org/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	// POST the token back in the header.
+	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	setCookie(rr, r)
+	// By accident we use the wrong header name for the token...
+	r.Header.Set("X-CSRF-nekot", token)
+	r.Header.Set("Referer", "http://www.gorillatoolkit.org/")
+
+	rr = httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	if finalErr != nil && finalErr != ErrNoToken {
+		t.Fatalf("middleware failed to return correct error: got '%v' want '%v'", finalErr, ErrNoToken)
+	}
+}
+
 func setCookie(rr *httptest.ResponseRecorder, r *http.Request) {
 	r.Header.Set("Cookie", rr.Header().Get("Set-Cookie"))
 }
