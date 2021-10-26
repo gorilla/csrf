@@ -18,7 +18,7 @@ gorilla/csrf is easy to use: add the middleware to individual handlers with
 the below:
 
     CSRF := csrf.Protect([]byte("32-byte-long-auth-key"))
-    http.HandlerFunc("/route", CSRF(YourHandler))
+    http.Handle("/route", CSRF(YourHandler))
 
 ... and then collect the token with `csrf.Token(r)` before passing it to the
 template, JSON body or HTTP header (you pick!). gorilla/csrf inspects the form body
