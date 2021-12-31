@@ -1,11 +1,10 @@
 package csrf
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"github.com/pkg/errors"
 
 	"github.com/gorilla/securecookie"
 )
