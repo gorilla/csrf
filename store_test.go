@@ -1,15 +1,15 @@
+//go:build go1.11
 // +build go1.11
 
 package csrf
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/pkg/errors"
 
 	"github.com/gorilla/securecookie"
 )
