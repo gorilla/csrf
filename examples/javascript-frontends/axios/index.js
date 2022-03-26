@@ -32,6 +32,8 @@ const post = async (axiosInstance, url) => {
     }
 };
 
+// general-purpose func to deal with clients like Axios,
+// which lowercase all headers received from the server response
 const parseCSRFToken = (resp) => {
     let csrfToken = resp.headers[csrfTokenHeader];
     if (!csrfToken) {
