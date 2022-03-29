@@ -23,8 +23,7 @@ func main() {
 
 	CSRFMiddleware := csrf.Protect(
 		[]byte("place-your-32-byte-long-key-here"),
-		csrf.Secure(false), // false in development only!
-		csrf.CookieName("csrf"),
+		csrf.Secure(false),                 // false in development only!
 		csrf.RequestHeader("X-CSRF-Token"), // Must be in CORS Allowed and Exposed Headers
 	)
 
@@ -52,7 +51,7 @@ func main() {
 	}
 
 	fmt.Println("starting http server on localhost:8080")
-	log.Fatal(server.ListenAndServe())
+	log.Panic(server.ListenAndServe())
 }
 
 func Get(w http.ResponseWriter, r *http.Request) {
