@@ -5,6 +5,12 @@
 [![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 [![CircleCI](https://circleci.com/gh/gorilla/csrf.svg?style=svg)](https://circleci.com/gh/gorilla/csrf)
 
+---
+
+**The Gorilla project has been archived, and is no longer under active maintainenance. You can read more here: https://github.com/gorilla#gorilla-toolkit**
+
+---
+
 gorilla/csrf is a HTTP middleware library that provides [cross-site request
 forgery](http://blog.codinghorror.com/preventing-csrf-and-xsrf-attacks/) (CSRF)
 protection. It includes:
