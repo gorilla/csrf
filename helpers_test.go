@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -34,9 +35,12 @@ func TestFormToken(t *testing.T) {
 	s.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 		t := template.Must((template.New("base").Parse(testTemplate)))
-		t.Execute(w, map[string]interface{}{
+		err := t.Execute(w, map[string]interface{}{
 			TemplateTag: TemplateField(r),
 		})
+		if err != nil {
+			log.Printf("errored during executing the template: %v", err)
+		}
 	}))
 
 	r, err := http.NewRequest("GET", "/", nil)
@@ -71,9 +75,12 @@ func TestMultipartFormToken(t *testing.T) {
 	s.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 		t := template.Must((template.New("base").Parse(testTemplate)))
-		t.Execute(w, map[string]interface{}{
+		err := t.Execute(w, map[string]interface{}{
 			TemplateTag: TemplateField(r),
 		})
+		if err != nil {
+			log.Printf("errored during executing the template: %v", err)
+		}
 	}))
 
 	r, err := http.NewRequest("GET", "/", nil)
@@ -93,7 +100,11 @@ func TestMultipartFormToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wr.Write([]byte(token))
+	_, err = wr.Write([]byte(token))
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	mp.Close()
 
 	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", &b)
@@ -185,7 +196,7 @@ func TestXOR(t *testing.T) {
 
 	for _, token := range testTokens {
 		if res := xorToken(token.a, token.b); res != nil {
-			if bytes.Compare(res, token.expected) != 0 {
+			if !bytes.Equal(res, token.expected) {
 				t.Fatalf("xorBytes failed to return the expected result: got %v want %v",
 					res, token.expected)
 			}
@@ -226,9 +237,12 @@ func TestTemplateField(t *testing.T) {
 		token = Token(r)
 		templateField = string(TemplateField(r))
 		t := template.Must((template.New("base").Parse(testTemplate)))
-		t.Execute(w, map[string]interface{}{
+		err := t.Execute(w, map[string]interface{}{
 			TemplateTag: TemplateField(r),
 		})
+		if err != nil {
+			log.Printf("errored during executing the template: %v", err)
+		}
 	}))
 
 	testFieldName := "custom_field_name"
@@ -280,7 +294,7 @@ func TestUnsafeSkipCSRFCheck(t *testing.T) {
 	var teapot = 418
 
 	// Issue a POST request without a CSRF token in the request.
-	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		// Set a non-200 header to make the test explicit.
 		w.WriteHeader(teapot)
 	}))

@@ -19,7 +19,7 @@ func contextGet(r *http.Request, key string) (interface{}, error) {
 
 func contextSave(r *http.Request, key string, val interface{}) *http.Request {
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, key, val)
+	ctx = context.WithValue(ctx, key, val) // nolint:staticcheck
 	return r.WithContext(ctx)
 }
 
