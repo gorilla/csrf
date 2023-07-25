@@ -153,7 +153,7 @@ func TestBadCookie(t *testing.T) {
 	p := Protect(testKey)(s)
 
 	var token string
-	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 	}))
 
@@ -238,7 +238,7 @@ func TestBadReferer(t *testing.T) {
 	p := Protect(testKey)(s)
 
 	var token string
-	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 	}))
 
@@ -294,7 +294,7 @@ func TestTrustedReferer(t *testing.T) {
 		p := Protect(testKey, TrustedOrigins(item.trustedOrigin))(s)
 
 		var token string
-		s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 			token = Token(r)
 		}))
 
@@ -342,7 +342,7 @@ func TestWithReferer(t *testing.T) {
 	p := Protect(testKey)(s)
 
 	var token string
-	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 	}))
 
@@ -379,12 +379,12 @@ func TestNoTokenProvided(t *testing.T) {
 	var finalErr error
 
 	s := http.NewServeMux()
-	p := Protect(testKey, ErrorHandler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	p := Protect(testKey, ErrorHandler(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		finalErr = FailureReason(r)
 	})))(s)
 
 	var token string
-	s.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 	}))
 
