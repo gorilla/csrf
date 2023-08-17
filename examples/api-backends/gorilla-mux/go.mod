@@ -1,6 +1,6 @@
 module github.com/gorilla-mux/examples/api-backends/gorilla-mux
 
-go 1.17
+go 1.20
 
 require (
 	github.com/gorilla/csrf v1.7.1
@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 )
