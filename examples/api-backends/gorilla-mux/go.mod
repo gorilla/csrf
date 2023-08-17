@@ -1,3 +1,5 @@
+// +build ignore
+
 module github.com/gorilla-mux/examples/api-backends/gorilla-mux
 
 go 1.20
