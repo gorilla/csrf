@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gorilla CSRF</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div>
+    <h1>Gorilla CSRF: Axios JS Frontend</h1>
+    <p>See Console and Network tabs of your browser's Developer Tools for further details</p>
+</div>
+
+<div>
+    <h2>Get Request:</h2>
+    <h3>Full Response:</h3>
+    <code id="get-request-full-response"></code>
+    <h3>CSRF Token:</h3>
+    <code id="get-response-csrf-token"></code>
+</div>
+
+
+<div>
+    <h2>Post Request:</h2>
+    <h3>Full Response:</h3>
+    <p>
+        Note that the <code>X-CSRF-Token</code> value is in the Axios <code>config.headers</code>;
+        it is not a response header set by the server.
+    </p>
+    <code id="post-request-full-response"></code>
+</div>
+</body>
+<script src="index.js"></script>
+</html>
