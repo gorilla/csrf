@@ -14,8 +14,8 @@ const tokenLength = 32
 
 // Context/session keys & prefixes
 const (
-	tokenKey     string = "gorilla.csrf.Token"
-	formKey      string = "gorilla.csrf.Form"
+	tokenKey     string = "gorilla.csrf.Token" // #nosec G101
+	formKey      string = "gorilla.csrf.Form"  // #nosec G101
 	errorKey     string = "gorilla.csrf.Error"
 	skipCheckKey string = "gorilla.csrf.Skip"
 	cookieName   string = "_gorilla_csrf"
@@ -107,6 +107,7 @@ type options struct {
 // 'Forbidden' error response.
 //
 // Example:
+//
 //	package main
 //
 //	import (
@@ -143,7 +144,6 @@ type options struct {
 //		// This is useful if you're sending JSON to clients or a front-end JavaScript
 //		// framework.
 //	}
-//
 func Protect(authKey []byte, opts ...Option) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		cs := parseOptions(h, opts...)
@@ -266,7 +266,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			if valid == false {
+			if !valid {
 				r = envError(r, ErrBadReferer)
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return
@@ -314,5 +314,4 @@ func unauthorizedHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, fmt.Sprintf("%s - %s",
 		http.StatusText(http.StatusForbidden), FailureReason(r)),
 		http.StatusForbidden)
-	return
 }
