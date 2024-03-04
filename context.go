@@ -10,7 +10,11 @@ import (
 )
 
 func contextGet(r *http.Request, key string) (interface{}, error) {
-	val := r.Context().Value(key)
+	return valueFromContext(r.Context(), key)
+}
+
+func valueFromContext(ctx context.Context, key string) (interface{}, error) {
+	val := ctx.Value(key)
 	if val == nil {
 		return nil, fmt.Errorf("no value exists in the context for key %q", key)
 	}
