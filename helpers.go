@@ -1,6 +1,7 @@
 package csrf
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
@@ -14,7 +15,14 @@ import (
 // a JSON response body. An empty token will be returned if the middleware
 // has not been applied (which will fail subsequent validation).
 func Token(r *http.Request) string {
-	if val, err := contextGet(r, tokenKey); err == nil {
+	return TokenFromContext(r.Context())
+}
+
+// TokenFromContext returns a masked CSRF token ready for passing into HTML template or
+// a JSON response body. An empty token will be returned if the middleware
+// has not been applied (which will fail subsequent validation).
+func TokenFromContext(ctx context.Context) string {
+	if val, err := valueFromContext(ctx, tokenKey); err == nil {
 		if maskedToken, ok := val.(string); ok {
 			return maskedToken
 		}
