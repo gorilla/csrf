@@ -131,6 +131,13 @@ func TrustedOrigins(origins []string) Option {
 	}
 }
 
+// URLSafe changes the base64 encoding format ( URL safe ) of the CSRF token.
+func URLSafe(s bool) Option {
+	return func(cs *csrf) {
+		cs.opts.URLSafe = s
+	}
+}
+
 // setStore sets the store used by the CSRF middleware.
 // Note: this is private (for now) to allow for internal API changes.
 func setStore(s store) Option {

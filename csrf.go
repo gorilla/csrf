@@ -1,6 +1,7 @@
 package csrf
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -87,6 +88,7 @@ type options struct {
 	// http.Cookie field instead of the "correct" HTTPOnly name that golint suggests.
 	HttpOnly       bool
 	Secure         bool
+	URLSafe        bool
 	SameSite       SameSiteMode
 	RequestHeader  string
 	FieldName      string
@@ -235,7 +237,11 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the masked token to the request context
-	r = contextSave(r, tokenKey, mask(realToken, r))
+	encoding := base64.StdEncoding
+	if cs.opts.URLSafe {
+		encoding = base64.URLEncoding
+	}
+	r = contextSave(r, tokenKey, mask(realToken, r, encoding))
 	// Save the field name to the request context
 	r = contextSave(r, formKey, cs.opts.FieldName)
 
