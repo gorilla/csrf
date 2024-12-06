@@ -99,3 +99,23 @@ func TestMaxAge(t *testing.T) {
 	})
 
 }
+
+func TestURLSafe(t *testing.T) {
+	t.Run("Ensure the default URLSafe is applied", func(t *testing.T) {
+		handler := Protect(testKey)(nil)
+		cs := handler.(*csrf)
+
+		if cs.opts.URLSafe != false {
+			t.Fatalf("default URLSafe not applied: got %v (want %v)", cs.opts.URLSafe, false)
+		}
+	})
+
+	t.Run("Support an explicit URLSafe of true", func(t *testing.T) {
+		handler := Protect(testKey, URLSafe(true))(nil)
+		cs := handler.(*csrf)
+
+		if cs.opts.URLSafe != true {
+			t.Fatalf("URLSafe not applied: got %v (want %v)", cs.opts.URLSafe, true)
+		}
+	})
+}
