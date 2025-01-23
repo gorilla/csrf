@@ -1,6 +1,7 @@
 package csrf
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,10 +17,7 @@ func TestProtect(t *testing.T) {
 	s := http.NewServeMux()
 	s.HandleFunc("/", testHandler)
 
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", false)
 
 	rr := httptest.NewRecorder()
 	p := Protect(testKey)(s)
@@ -46,10 +44,7 @@ func TestCookieOptions(t *testing.T) {
 	s := http.NewServeMux()
 	s.HandleFunc("/", testHandler)
 
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", false)
 
 	rr := httptest.NewRecorder()
 	p := Protect(testKey, CookieName("nameoverride"), Secure(false), HttpOnly(false), Path("/pathoverride"), Domain("domainoverride"), MaxAge(173))(s)
@@ -86,10 +81,7 @@ func TestMethods(t *testing.T) {
 
 	// Test idempontent ("safe") methods
 	for _, method := range safeMethods {
-		r, err := http.NewRequest(method, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		r := createRequest(method, "/", false)
 
 		rr := httptest.NewRecorder()
 		p.ServeHTTP(rr, r)
@@ -107,10 +99,7 @@ func TestMethods(t *testing.T) {
 	// Test non-idempotent methods (should return a 403 without a cookie set)
 	nonIdempotent := []string{"POST", "PUT", "DELETE", "PATCH"}
 	for _, method := range nonIdempotent {
-		r, err := http.NewRequest(method, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		r := createRequest(method, "/", false)
 
 		rr := httptest.NewRecorder()
 		p.ServeHTTP(rr, r)
@@ -133,10 +122,7 @@ func TestNoCookie(t *testing.T) {
 	p := Protect(testKey)(s)
 
 	// POST the token back in the header.
-	r, err := http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("POST", "/", false)
 
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
@@ -158,19 +144,13 @@ func TestBadCookie(t *testing.T) {
 	}))
 
 	// Obtain a CSRF cookie via a GET request.
-	r, err := http.NewRequest("GET", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", false)
 
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
 
 	// POST the token back in the header.
-	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r = createRequest("POST", "/", false)
 
 	// Replace the cookie prefix
 	badHeader := strings.Replace(cookieName+"=", rr.Header().Get("Set-Cookie"), "_badCookie", -1)
@@ -193,10 +173,7 @@ func TestVaryHeader(t *testing.T) {
 	s.HandleFunc("/", testHandler)
 	p := Protect(testKey)(s)
 
-	r, err := http.NewRequest("HEAD", "https://www.golang.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", true)
 
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
@@ -211,16 +188,13 @@ func TestVaryHeader(t *testing.T) {
 	}
 }
 
-// Requests with no Referer header should fail.
+// TestNoReferer checks that HTTPS requests with no Referer header fail.
 func TestNoReferer(t *testing.T) {
 	s := http.NewServeMux()
 	s.HandleFunc("/", testHandler)
 	p := Protect(testKey)(s)
 
-	r, err := http.NewRequest("POST", "https://golang.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("POST", "https://golang.org/", true)
 
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
@@ -243,20 +217,12 @@ func TestBadReferer(t *testing.T) {
 	}))
 
 	// Obtain a CSRF cookie via a GET request.
-	r, err := http.NewRequest("GET", "https://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	r := createRequest("GET", "/", true)
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
 
 	// POST the token back in the header.
-	r, err = http.NewRequest("POST", "https://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	r = createRequest("POST", "/", true)
 	setCookie(rr, r)
 	r.Header.Set("X-CSRF-Token", token)
 
@@ -289,50 +255,47 @@ func TestTrustedReferer(t *testing.T) {
 	}
 
 	for _, item := range testTable {
-		s := http.NewServeMux()
+		t.Run(fmt.Sprintf("TrustedOrigin: %v", item.trustedOrigin), func(t *testing.T) {
 
-		p := Protect(testKey, TrustedOrigins(item.trustedOrigin))(s)
+			s := http.NewServeMux()
 
-		var token string
-		s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-			token = Token(r)
-		}))
+			p := Protect(testKey, TrustedOrigins(item.trustedOrigin))(s)
 
-		// Obtain a CSRF cookie via a GET request.
-		r, err := http.NewRequest("GET", "https://www.gorillatoolkit.org/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+			var token string
+			s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+				token = Token(r)
+			}))
 
-		rr := httptest.NewRecorder()
-		p.ServeHTTP(rr, r)
+			// Obtain a CSRF cookie via a GET request.
+			r := createRequest("GET", "/", true)
 
-		// POST the token back in the header.
-		r, err = http.NewRequest("POST", "https://www.gorillatoolkit.org/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+			rr := httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
 
-		setCookie(rr, r)
-		r.Header.Set("X-CSRF-Token", token)
+			// POST the token back in the header.
+			r = createRequest("POST", "/", true)
 
-		// Set a non-matching Referer header.
-		r.Header.Set("Referer", "http://golang.org/")
+			setCookie(rr, r)
+			r.Header.Set("X-CSRF-Token", token)
 
-		rr = httptest.NewRecorder()
-		p.ServeHTTP(rr, r)
+			// Set a non-matching Referer header.
+			r.Header.Set("Referer", "https://golang.org/")
 
-		if item.shouldPass {
-			if rr.Code != http.StatusOK {
-				t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
-					rr.Code, http.StatusOK)
+			rr = httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
+
+			if item.shouldPass {
+				if rr.Code != http.StatusOK {
+					t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+						rr.Code, http.StatusOK)
+				}
+			} else {
+				if rr.Code != http.StatusForbidden {
+					t.Fatalf("middleware failed reject a non-matching Referer header: got %v want %v",
+						rr.Code, http.StatusForbidden)
+				}
 			}
-		} else {
-			if rr.Code != http.StatusForbidden {
-				t.Fatalf("middleware failed reject a non-matching Referer header: got %v want %v",
-					rr.Code, http.StatusForbidden)
-			}
-		}
+		})
 	}
 }
 
@@ -347,23 +310,16 @@ func TestWithReferer(t *testing.T) {
 	}))
 
 	// Obtain a CSRF cookie via a GET request.
-	r, err := http.NewRequest("GET", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	r := createRequest("GET", "/", true)
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
 
 	// POST the token back in the header.
-	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r = createRequest("POST", "/", true)
 
 	setCookie(rr, r)
 	r.Header.Set("X-CSRF-Token", token)
-	r.Header.Set("Referer", "http://www.gorillatoolkit.org/")
+	r.Header.Set("Referer", "https://www.gorillatoolkit.org/")
 
 	rr = httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
@@ -387,26 +343,19 @@ func TestNoTokenProvided(t *testing.T) {
 	s.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		token = Token(r)
 	}))
-
 	// Obtain a CSRF cookie via a GET request.
-	r, err := http.NewRequest("GET", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", true)
 
 	rr := httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
 
 	// POST the token back in the header.
-	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r = createRequest("POST", "/", true)
 
 	setCookie(rr, r)
 	// By accident we use the wrong header name for the token...
 	r.Header.Set("X-CSRF-nekot", token)
-	r.Header.Set("Referer", "http://www.gorillatoolkit.org/")
+	r.Header.Set("Referer", "https://www.gorillatoolkit.org/")
 
 	rr = httptest.NewRecorder()
 	p.ServeHTTP(rr, r)
@@ -418,4 +367,178 @@ func TestNoTokenProvided(t *testing.T) {
 
 func setCookie(rr *httptest.ResponseRecorder, r *http.Request) {
 	r.Header.Set("Cookie", rr.Header().Get("Set-Cookie"))
+}
+
+func TestProtectScenarios(t *testing.T) {
+	tests := []struct {
+		name                 string
+		safeMethod           bool
+		originUntrusted      bool
+		originHTTP           bool
+		originTrusted        bool
+		secureRequest        bool
+		refererTrusted       bool
+		refererUntrusted     bool
+		refererHTTPDowngrade bool
+		refererRelative      bool
+		tokenValid           bool
+		tokenInvalid         bool
+		want                 bool
+	}{
+		{
+			name:       "safe method pass",
+			safeMethod: true,
+			want:       true,
+		},
+		{
+			name:       "cleartext POST with trusted origin & valid token pass",
+			originHTTP: true,
+			tokenValid: true,
+			want:       true,
+		},
+		{
+			name:            "cleartext POST with untrusted origin reject",
+			originUntrusted: true,
+			tokenValid:      true,
+		},
+		{
+			name:       "cleartext POST with HTTP origin & invalid token reject",
+			originHTTP: true,
+		},
+		{
+			name:       "cleartext POST without origin with valid token pass",
+			tokenValid: true,
+			want:       true,
+		},
+		{
+			name: "cleartext POST without origin with invalid token reject",
+		},
+		{
+			name:          "TLS POST with HTTP origin & no referer & valid token reject",
+			tokenValid:    true,
+			secureRequest: true,
+			originHTTP:    true,
+		},
+		{
+			name:          "TLS POST without origin and without referer reject",
+			secureRequest: true,
+			tokenValid:    true,
+		},
+		{
+			name:             "TLS POST without origin with untrusted referer reject",
+			secureRequest:    true,
+			refererUntrusted: true,
+			tokenValid:       true,
+		},
+		{
+			name:           "TLS POST without origin with trusted referer & valid token pass",
+			secureRequest:  true,
+			refererTrusted: true,
+			tokenValid:     true,
+			want:           true,
+		},
+		{
+			name:                 "TLS POST without origin from _cleartext_ same domain referer with valid token reject",
+			secureRequest:        true,
+			refererHTTPDowngrade: true,
+			tokenValid:           true,
+		},
+		{
+			name:            "TLS POST without origin from relative referer with valid token pass",
+			secureRequest:   true,
+			refererRelative: true,
+			tokenValid:      true,
+			want:            true,
+		},
+		{
+			name:            "TLS POST without origin from relative referer with invalid token reject",
+			secureRequest:   true,
+			refererRelative: true,
+			tokenInvalid:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var token string
+			var flag bool
+			mux := http.NewServeMux()
+			mux.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+				token = Token(r)
+			}))
+			mux.Handle("/submit", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				flag = true
+			}))
+			p := Protect(testKey)(mux)
+
+			// Obtain a CSRF cookie via a GET request.
+			r := createRequest("GET", "/", tt.secureRequest)
+			rr := httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
+
+			r = createRequest("POST", "/submit", tt.secureRequest)
+			if tt.safeMethod {
+				r = createRequest("GET", "/submit", tt.secureRequest)
+			}
+
+			// Set the Origin header
+			switch {
+			case tt.originUntrusted:
+				r.Header.Set("Origin", "http://www.untrusted-origin.org")
+			case tt.originTrusted:
+				r.Header.Set("Origin", "https://www.gorillatoolkit.org")
+			case tt.originHTTP:
+				r.Header.Set("Origin", "http://www.gorillatoolkit.org")
+			}
+
+			// Set the Referer header
+			switch {
+			case tt.refererTrusted:
+				p = Protect(testKey, TrustedOrigins([]string{"external-trusted-origin.test"}))(mux)
+				r.Header.Set("Referer", "https://external-trusted-origin.test/foobar")
+			case tt.refererUntrusted:
+				r.Header.Set("Referer", "http://www.invalid-referer.org")
+			case tt.refererHTTPDowngrade:
+				r.Header.Set("Referer", "http://www.gorillatoolkit.org/foobar")
+			case tt.refererRelative:
+				r.Header.Set("Referer", "/foobar")
+			}
+
+			// Set the CSRF token & associated cookie
+			switch {
+			case tt.tokenInvalid:
+				setCookie(rr, r)
+				r.Header.Set("X-CSRF-Token", "this-is-an-invalid-token")
+			case tt.tokenValid:
+				setCookie(rr, r)
+				r.Header.Set("X-CSRF-Token", token)
+			}
+
+			rr = httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
+
+			if tt.want && rr.Code != http.StatusOK {
+				t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+					rr.Code, http.StatusOK)
+			}
+
+			if tt.want && !flag {
+				t.Fatalf("middleware failed to pass to the next handler: got %v want %v",
+					flag, true)
+
+			}
+			if !tt.want && flag {
+				t.Fatalf("middleware failed to reject the request: got %v want %v", flag, false)
+			}
+		})
+	}
+}
+
+func createRequest(method, path string, useTLS bool) *http.Request {
+	r := httptest.NewRequest(method, path, nil)
+	r.Host = "www.gorillatoolkit.org"
+	if !useTLS {
+		return PlaintextHTTPRequest(r)
+	}
+	return r
 }

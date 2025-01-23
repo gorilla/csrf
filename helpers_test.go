@@ -83,10 +83,7 @@ func TestMultipartFormToken(t *testing.T) {
 		}
 	}))
 
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", true)
 
 	rr := httptest.NewRecorder()
 	p := Protect(testKey)(s)
@@ -107,13 +104,13 @@ func TestMultipartFormToken(t *testing.T) {
 
 	mp.Close()
 
-	r, err = http.NewRequest("POST", "http://www.gorillatoolkit.org/", &b)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r = httptest.NewRequest("POST", "/", &b)
+	r.Host = "www.gorillatoolkit.org"
 
 	// Add the multipart header.
 	r.Header.Set("Content-Type", mp.FormDataContentType())
+	// Add Origin to pass the same-origin check.
+	r.Header.Set("Origin", "https://www.gorillatoolkit.org")
 
 	// Send back the issued cookie.
 	setCookie(rr, r)
@@ -246,10 +243,8 @@ func TestTemplateField(t *testing.T) {
 	}))
 
 	testFieldName := "custom_field_name"
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("GET", "/", false)
+	// r, err := http.NewRequest("GET", "/", nil)
 
 	rr := httptest.NewRecorder()
 	p := Protect(testKey, FieldName(testFieldName))(s)
@@ -299,10 +294,7 @@ func TestUnsafeSkipCSRFCheck(t *testing.T) {
 		w.WriteHeader(teapot)
 	}))
 
-	r, err := http.NewRequest("POST", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := createRequest("POST", "/", false)
 
 	// Must be used prior to the CSRF handler being invoked.
 	p := skipCheck(Protect(testKey)(s))
