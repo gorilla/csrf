@@ -21,7 +21,6 @@ const (
 	errorKey     string = "gorilla.csrf.Error"
 	skipCheckKey string = "gorilla.csrf.Skip"
 	cookieName   string = "_gorilla_csrf"
-	errorPrefix  string = "gorilla/csrf: "
 )
 
 type contextKey string
