@@ -74,7 +74,7 @@ func TemplateField(r *http.Request) template.HTML {
 // token and returning them together as a 64-byte slice. This effectively
 // randomises the token on a per-request basis without breaking multiple browser
 // tabs/windows.
-func mask(realToken []byte, _ *http.Request) string {
+func mask(realToken []byte, _ *http.Request, encoding *base64.Encoding) string {
 	otp, err := generateRandomBytes(tokenLength)
 	if err != nil {
 		return ""
@@ -83,7 +83,7 @@ func mask(realToken []byte, _ *http.Request) string {
 	// XOR the OTP with the real token to generate a masked token. Append the
 	// OTP to the front of the masked token to allow unmasking in the subsequent
 	// request.
-	return base64.StdEncoding.EncodeToString(append(otp, xorToken(otp, realToken)...))
+	return encoding.EncodeToString(append(otp, xorToken(otp, realToken)...))
 }
 
 // unmask splits the issued token (one-time-pad + masked token) and returns the
@@ -129,7 +129,13 @@ func (cs *csrf) requestToken(r *http.Request) ([]byte, error) {
 
 	// Decode the "issued" (pad + masked) token sent in the request. Return a
 	// nil byte slice on a decoding error (this will fail upstream).
-	decoded, err := base64.StdEncoding.DecodeString(issued)
+	encoding := base64.StdEncoding
+
+	if cs.opts.URLSafe {
+		encoding = base64.URLEncoding
+	}
+
+	decoded, err := encoding.DecodeString(issued)
 	if err != nil {
 		return nil, err
 	}
