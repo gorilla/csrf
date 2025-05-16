@@ -371,7 +371,7 @@ Getting CSRF protection right is important, so here's some background:
   approaches.
 - Cookies are authenticated and based on the [securecookie](https://github.com/gorilla/securecookie)
   library. They're also Secure (issued over HTTPS only) and are HttpOnly
-  by default, because sane defaults are important.
+  by default, because sensible defaults are important.
 - Cookie SameSite attribute (prevents cookies from being sent by a browser
   during cross site requests) are not set by default to maintain backwards compatibility
   for legacy systems. The SameSite attribute can be set with the SameSite option.
