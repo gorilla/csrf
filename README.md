@@ -218,6 +218,26 @@ try {
 }
 ```
 
+It's not always feasible to send form fields to SPA applications and HTTP headers may not always be available
+from JS (first load), so one can use a backend template with a script tag to set CSRF token to be used on a first load.
+The care must be taken to not HTMLescape or unicode-escape that token:
+
+```hmtl
+<script>window.__CSRF_TOKEN__ = {{.CSRFToken}}</script>
+```
+
+```go
+token := csrf.Token(r)
+tokenJSON, err := json.Marshal(token)
+  if err != nil {
+      panic(err)
+  }
+  tmpl.Execute(w, map[string]any{
+      "CSRFToken": template.JS(tokenJSON),
+      ...
+  })
+```
+
 If you plan to host your JavaScript application on another domain, you can use the Trusted Origins
 feature to allow the host of your JavaScript application to make requests to your Go application. Observe the example below:
 
