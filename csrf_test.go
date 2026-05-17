@@ -376,6 +376,7 @@ func TestProtectScenarios(t *testing.T) {
 		originUntrusted      bool
 		originHTTP           bool
 		originTrusted        bool
+		originNull           bool
 		secureRequest        bool
 		refererTrusted       bool
 		refererUntrusted     bool
@@ -456,6 +457,11 @@ func TestProtectScenarios(t *testing.T) {
 			refererRelative: true,
 			tokenInvalid:    true,
 		},
+		{
+			name:       `cleartext POST with Origin "null" reject`,
+			originNull: true,
+			tokenValid: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -489,6 +495,8 @@ func TestProtectScenarios(t *testing.T) {
 				r.Header.Set("Origin", "https://www.gorillatoolkit.org")
 			case tt.originHTTP:
 				r.Header.Set("Origin", "http://www.gorillatoolkit.org")
+			case tt.originNull:
+				r.Header.Set("Origin", "null")
 			}
 
 			// Set the Referer header

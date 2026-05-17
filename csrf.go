@@ -279,6 +279,16 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// if we have an Origin header, check it against our allowlist
 		origin := r.Header.Get("Origin")
 		if origin != "" {
+			// RFC 6454 §7.3: privacy-sensitive contexts (sandboxed iframes,
+			// some redirects, data: URLs) send the literal string "null".
+			// That's an opaque origin, never the same as ours and never
+			// something we'd put on the trusted list, so reject it up front
+			// instead of leaning on url.Parse returning a host-less URL.
+			if origin == "null" {
+				r = envError(r, ErrBadOrigin)
+				cs.opts.ErrorHandler.ServeHTTP(w, r)
+				return
+			}
 			parsedOrigin, err := url.Parse(origin)
 			if err != nil {
 				r = envError(r, ErrBadOrigin)
