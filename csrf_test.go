@@ -534,6 +534,68 @@ func TestProtectScenarios(t *testing.T) {
 	}
 }
 
+// TestNullOriginFallsBackToReferer makes sure a literal "null" Origin
+// header doesn't blow up the origin allowlist check (RFC 6454 §7.3),
+// and the request is then evaluated by the Referer rules just like a
+// missing Origin would be.
+func TestNullOriginFallsBackToReferer(t *testing.T) {
+	tests := []struct {
+		name          string
+		secureRequest bool
+		referer       string
+		token         func(rr *httptest.ResponseRecorder, r *http.Request, tok string)
+		want          int
+	}{
+		{
+			name:          "cleartext POST with null Origin and valid token passes",
+			secureRequest: false,
+			token: func(rr *httptest.ResponseRecorder, r *http.Request, tok string) {
+				setCookie(rr, r)
+				r.Header.Set("X-CSRF-Token", tok)
+			},
+			want: http.StatusOK,
+		},
+		{
+			name:          "TLS POST with null Origin and no Referer is rejected (no Referer)",
+			secureRequest: true,
+			token: func(rr *httptest.ResponseRecorder, r *http.Request, tok string) {
+				setCookie(rr, r)
+				r.Header.Set("X-CSRF-Token", tok)
+			},
+			want: http.StatusForbidden,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var token string
+			mux := http.NewServeMux()
+			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				token = Token(r)
+			})
+			mux.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {})
+			p := Protect(testKey)(mux)
+
+			g := createRequest("GET", "/", tt.secureRequest)
+			gr := httptest.NewRecorder()
+			p.ServeHTTP(gr, g)
+
+			r := createRequest("POST", "/submit", tt.secureRequest)
+			r.Header.Set("Origin", "null")
+			if tt.referer != "" {
+				r.Header.Set("Referer", tt.referer)
+			}
+			tt.token(gr, r, token)
+
+			rr := httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
+			if rr.Code != tt.want {
+				t.Fatalf("got status %d, want %d", rr.Code, tt.want)
+			}
+		})
+	}
+}
+
 func createRequest(method, path string, useTLS bool) *http.Request {
 	r := httptest.NewRequest(method, path, nil)
 	r.Host = "www.gorillatoolkit.org"

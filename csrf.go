@@ -276,9 +276,13 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			requestURL.Host = r.Host
 		}
 
-		// if we have an Origin header, check it against our allowlist
+		// if we have an Origin header, check it against our allowlist.
+		// "null" is a special opaque origin (sandboxed iframes, file://,
+		// privacy-sensitive contexts per RFC 6454 §7.3); it isn't
+		// comparable against our allowlist, so treat it like an absent
+		// header and rely on the Referer check below.
 		origin := r.Header.Get("Origin")
-		if origin != "" {
+		if origin != "" && origin != "null" {
 			parsedOrigin, err := url.Parse(origin)
 			if err != nil {
 				r = envError(r, ErrBadOrigin)
@@ -298,7 +302,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// successful HTTP Machine-in-the-Middle attack and uses this to inject
 		// a form and cause submission to our origin. We strictly disallow
 		// cleartext HTTP origins and evaluate the domain against an allowlist.
-		if origin == "" && !isPlaintext {
+		if (origin == "" || origin == "null") && !isPlaintext {
 			// Fetch the Referer value. Call the error handler if it's empty or
 			// otherwise fails to parse.
 			referer, err := url.Parse(r.Referer())
