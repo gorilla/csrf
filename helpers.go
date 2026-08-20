@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -142,14 +143,13 @@ func (cs *csrf) requestToken(r *http.Request) ([]byte, error) {
 // fails to function correctly.
 func generateRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
-	_, err := rand.Read(b)
+	_, err := io.ReadFull(rand.Reader, b)
 	// err == nil only if len(b) == n
 	if err != nil {
 		return nil, err
 	}
 
 	return b, nil
-
 }
 
 // sameOrigin returns true if URLs a and b share the same origin. The same
