@@ -248,9 +248,10 @@ func TestTrustedReferer(t *testing.T) {
 	}{
 		{[]string{"golang.org"}, true},
 		{[]string{"api.example.com", "golang.org"}, true},
+		{[]string{"https://golang.org"}, true},
 		{[]string{"http://golang.org"}, false},
-		{[]string{"https://golang.org"}, false},
 		{[]string{"http://example.com"}, false},
+		{[]string{"https://example.com"}, false},
 		{[]string{"example.com"}, false},
 	}
 
