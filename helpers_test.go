@@ -180,6 +180,25 @@ func TestSameOrigin(t *testing.T) {
 	}
 }
 
+func TestTrustedOrigin(t *testing.T) {
+	u, err := url.Parse("https://golang.org/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !trustedOrigin([]string{"golang.org"}, u) {
+		t.Fatal("host entry should match")
+	}
+	if !trustedOrigin([]string{"https://golang.org"}, u) {
+		t.Fatal("scheme://host entry should match")
+	}
+	if trustedOrigin([]string{"http://golang.org"}, u) {
+		t.Fatal("http origin should not match https request origin")
+	}
+	if trustedOrigin([]string{"example.com"}, u) {
+		t.Fatal("unrelated host should not match")
+	}
+}
+
 func TestXOR(t *testing.T) {
 	testTokens := []struct {
 		a        []byte

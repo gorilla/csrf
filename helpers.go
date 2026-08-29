@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"slices"
 )
 
 // Token returns a masked CSRF token ready for passing into HTML template or
@@ -156,6 +157,21 @@ func generateRandomBytes(n int) ([]byte, error) {
 // origin is defined as host (which includes the port) and scheme.
 func sameOrigin(a, b *url.URL) bool {
 	return (a.Scheme == b.Scheme && a.Host == b.Host)
+}
+
+// trustedOrigin reports whether u matches a TrustedOrigins entry. Entries may
+// be a host ("example.com") or a full origin ("https://example.com").
+func trustedOrigin(trusted []string, u *url.URL) bool {
+	if u == nil || u.Host == "" {
+		return false
+	}
+	if slices.Contains(trusted, u.Host) {
+		return true
+	}
+	if u.Scheme != "" && slices.Contains(trusted, u.Scheme+"://"+u.Host) {
+		return true
+	}
+	return false
 }
 
 // compare securely (constant-time) compares the unmasked token from the request

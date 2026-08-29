@@ -121,6 +121,8 @@ func CookieName(name string) Option {
 }
 
 // TrustedOrigins configures a set of origins (Referers) that are considered as trusted.
+// Each entry may be a host ("ui.example.com") or a full origin
+// ("https://ui.example.com").
 // This will allow cross-domain CSRF use-cases - e.g. where the front-end is served
 // from a different domain than the API server - to correctly pass a CSRF check.
 //
