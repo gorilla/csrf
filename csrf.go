@@ -255,10 +255,16 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// HTTP methods not defined as idempotent ("safe") under RFC7231 require
 	// inspection.
 	if !contains(safeMethods, r.Method) {
-		var isPlaintext bool
-		val := r.Context().Value(PlaintextHTTPContextKey)
-		if val != nil {
-			isPlaintext, _ = val.(bool)
+		// Secure(false) is the documented local-dev flag. Treat those
+		// requests as plaintext so Origin: http://localhost:... matches
+		// instead of being compared against a rewritten https URL.
+		// PlaintextHTTPRequest still forces this when Secure stays true
+		// behind a cleartext reverse proxy.
+		isPlaintext := !cs.opts.Secure
+		if val := r.Context().Value(PlaintextHTTPContextKey); val != nil {
+			if b, ok := val.(bool); ok && b {
+				isPlaintext = true
+			}
 		}
 
 		// take a copy of the request URL to avoid mutating the original

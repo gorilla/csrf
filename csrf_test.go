@@ -369,6 +369,39 @@ func setCookie(rr *httptest.ResponseRecorder, r *http.Request) {
 	r.Header.Set("Cookie", rr.Header().Get("Set-Cookie"))
 }
 
+// Secure(false) is the documented local-dev option. A POST from
+// http://localhost must pass the Origin check without wrapping the
+// request in PlaintextHTTPRequest (issue #190).
+func TestSecureFalseAllowsHTTPOrigin(t *testing.T) {
+	mux := http.NewServeMux()
+	var token string
+	mux.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	}))
+	passed := false
+	mux.Handle("/submit", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		passed = true
+	}))
+	p := Protect(testKey, Secure(false))(mux)
+
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Host = "localhost:3000"
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	r = httptest.NewRequest("POST", "/submit", nil)
+	r.Host = "localhost:3000"
+	r.Header.Set("Origin", "http://localhost:3000")
+	setCookie(rr, r)
+	r.Header.Set("X-CSRF-Token", token)
+
+	rr = httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+	if rr.Code != http.StatusOK || !passed {
+		t.Fatalf("Secure(false) should accept http Origin on localhost: code=%d passed=%v", rr.Code, passed)
+	}
+}
+
 func TestProtectScenarios(t *testing.T) {
 	tests := []struct {
 		name                 string
