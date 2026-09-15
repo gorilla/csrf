@@ -542,3 +542,85 @@ func createRequest(method, path string, useTLS bool) *http.Request {
 	}
 	return r
 }
+
+// TestReverseProxyRewrittenHost covers gorilla/csrf#187: a same-origin
+// browser POST whose Host was rewritten by a reverse proxy must still
+// pass when Sec-Fetch-Site is same-origin. Cross-site and missing
+// Sec-Fetch-Site must not.
+func TestReverseProxyRewrittenHost(t *testing.T) {
+	tests := []struct {
+		name         string
+		origin       string
+		referer      string
+		secFetchSite string
+		want         bool
+	}{
+		{
+			name:         "Origin mismatch with Sec-Fetch-Site same-origin pass",
+			origin:       "https://www.gorillatoolkit.org",
+			secFetchSite: "same-origin",
+			want:         true,
+		},
+		{
+			name:   "Origin mismatch without Sec-Fetch-Site reject",
+			origin: "https://www.gorillatoolkit.org",
+		},
+		{
+			name:         "Origin mismatch with Sec-Fetch-Site cross-site reject",
+			origin:       "https://www.gorillatoolkit.org",
+			secFetchSite: "cross-site",
+		},
+		{
+			name:         "Referer mismatch with Sec-Fetch-Site same-origin pass",
+			referer:      "https://www.gorillatoolkit.org/form",
+			secFetchSite: "same-origin",
+			want:         true,
+		},
+		{
+			name:    "Referer mismatch without Sec-Fetch-Site reject",
+			referer: "https://www.gorillatoolkit.org/form",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var token string
+			mux := http.NewServeMux()
+			mux.Handle("/", http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+				token = Token(r)
+			}))
+			mux.Handle("/submit", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+			p := Protect(testKey)(mux)
+
+			r := createRequest("GET", "/", true)
+			rr := httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
+
+			r = createRequest("POST", "/submit", true)
+			r.Host = "backend.acme.example"
+			if tt.origin != "" {
+				r.Header.Set("Origin", tt.origin)
+			}
+			if tt.referer != "" {
+				r.Header.Set("Referer", tt.referer)
+			}
+			if tt.secFetchSite != "" {
+				r.Header.Set("Sec-Fetch-Site", tt.secFetchSite)
+			}
+			setCookie(rr, r)
+			r.Header.Set("X-CSRF-Token", token)
+
+			rr = httptest.NewRecorder()
+			p.ServeHTTP(rr, r)
+
+			if tt.want && rr.Code != http.StatusOK {
+				t.Fatalf("middleware failed to pass rewritten-Host request: got %v want %v",
+					rr.Code, http.StatusOK)
+			}
+			if !tt.want && rr.Code != http.StatusForbidden {
+				t.Fatalf("middleware failed to reject rewritten-Host request: got %v want %v",
+					rr.Code, http.StatusForbidden)
+			}
+		})
+	}
+}
