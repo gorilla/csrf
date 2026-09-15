@@ -285,7 +285,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return
 			}
-			if !sameOrigin(&requestURL, parsedOrigin) && !slices.Contains(cs.opts.TrustedOrigins, parsedOrigin.Host) {
+			if !sameOrigin(&requestURL, parsedOrigin) && !slices.Contains(cs.opts.TrustedOrigins, parsedOrigin.Host) && !sameOriginFetch(r) {
 				r = envError(r, ErrBadOrigin)
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return
@@ -318,7 +318,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// If the request is being served via TLS and the Referer is not the
 			// same origin, check the domain against our allowlist. We only
 			// check when we have host information from the referer.
-			if referer.Host != "" && referer.Host != r.Host && !slices.Contains(cs.opts.TrustedOrigins, referer.Host) {
+			if referer.Host != "" && referer.Host != r.Host && !slices.Contains(cs.opts.TrustedOrigins, referer.Host) && !sameOriginFetch(r) {
 				r = envError(r, ErrBadReferer)
 				cs.opts.ErrorHandler.ServeHTTP(w, r)
 				return

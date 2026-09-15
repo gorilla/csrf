@@ -158,6 +158,14 @@ func sameOrigin(a, b *url.URL) bool {
 	return (a.Scheme == b.Scheme && a.Host == b.Host)
 }
 
+// sameOriginFetch reports whether the browser labeled the request as
+// same-origin via Sec-Fetch-Site. Browsers set this forbidden header;
+// scripts cannot. Reverse proxies that rewrite Host still leave
+// Sec-Fetch-Site=same-origin on genuine same-origin form posts.
+func sameOriginFetch(r *http.Request) bool {
+	return r.Header.Get("Sec-Fetch-Site") == "same-origin"
+}
+
 // compare securely (constant-time) compares the unmasked token from the request
 // against the real token from the session.
 func compareTokens(a, b []byte) bool {
