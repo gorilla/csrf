@@ -2,7 +2,6 @@ package csrf
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -208,14 +207,16 @@ func (sr shortReader) Read(p []byte) (int, error) {
 	return len(p) % 2, io.ErrUnexpectedEOF
 }
 
-// TestGenerateRandomBytes tests the (extremely rare) case that crypto/rand does
-// not return the expected number of bytes.
+// TestGenerateRandomBytes tests the (extremely rare) case that the random
+// source does not return the expected number of bytes.
+//
+// Go 1.24+ crypto/rand.Read fatals on error (go.dev/issue/66821), so this
+// injects a failing reader instead of swapping crypto/rand.Reader.
 func TestGenerateRandomBytes(t *testing.T) {
-	// Pioneered from https://github.com/justinas/nosurf
-	original := rand.Reader
-	rand.Reader = shortReader{}
+	original := randReader
+	randReader = shortReader{}
 	defer func() {
-		rand.Reader = original
+		randReader = original
 	}()
 
 	b, err := generateRandomBytes(tokenLength)
