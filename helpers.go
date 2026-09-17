@@ -6,9 +6,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"net/url"
 )
+
+// randReader is the CSPRNG used by generateRandomBytes. Tests replace it.
+var randReader io.Reader = rand.Reader
 
 // Token returns a masked CSRF token ready for passing into HTML template or
 // a JSON response body. An empty token will be returned if the middleware
@@ -142,14 +146,12 @@ func (cs *csrf) requestToken(r *http.Request) ([]byte, error) {
 // fails to function correctly.
 func generateRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// err == nil only if len(b) == n
+	_, err := io.ReadFull(randReader, b)
 	if err != nil {
 		return nil, err
 	}
 
 	return b, nil
-
 }
 
 // sameOrigin returns true if URLs a and b share the same origin. The same
