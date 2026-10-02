@@ -542,3 +542,43 @@ func createRequest(method, path string, useTLS bool) *http.Request {
 	}
 	return r
 }
+
+// TestInsecureOriginSameOrigin tests that when csrf.Secure(false) is enabled,
+// a POST request with Origin header "http://localhost:8080" and Host "localhost:8080"
+// succeeds without ErrBadOrigin.
+func TestInsecureOriginSameOrigin(t *testing.T) {
+	var token string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	})
+	mux.HandleFunc("/submit", testHandler)
+
+	p := Protect(testKey, Secure(false))(mux)
+
+	// Obtain a CSRF cookie via a GET request.
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Host = "localhost:8080"
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("failed to obtain token: got %v want %v", rr.Code, http.StatusOK)
+	}
+
+	// Issue POST with matching Origin header over HTTP.
+	r = httptest.NewRequest("POST", "/submit", nil)
+	r.Host = "localhost:8080"
+	r.Header.Set("Origin", "http://localhost:8080")
+	setCookie(rr, r)
+	r.Header.Set("X-CSRF-Token", token)
+
+	rr = httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("middleware failed to accept same-origin HTTP request when Secure(false): got %v want %v",
+			rr.Code, http.StatusOK)
+	}
+}
+

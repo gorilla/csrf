@@ -269,7 +269,7 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		requestURL := *r.URL // shallow clone
 
 		requestURL.Scheme = "https"
-		if isPlaintext {
+		if isPlaintext || !cs.opts.Secure {
 			requestURL.Scheme = "http"
 		}
 		if requestURL.Host == "" {
