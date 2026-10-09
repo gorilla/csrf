@@ -106,6 +106,7 @@ type options struct {
 	ErrorHandler   http.Handler
 	CookieName     string
 	TrustedOrigins []string
+	StripFormField bool
 }
 
 // Protect is HTTP middleware that provides Cross-Site Request Forgery
@@ -349,6 +350,9 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if cs.opts.StripFormField {
+			stripFormField(r, cs.opts.FieldName)
+		}
 	}
 
 	// Set the Vary: Cookie header to protect clients from caching the response.

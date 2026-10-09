@@ -29,6 +29,7 @@ func TestOptions(t *testing.T) {
 		FieldName(field),
 		ErrorHandler(http.HandlerFunc(errorHandler)),
 		CookieName(name),
+		StripFormField(true),
 	}
 
 	// Parse our test options and check that they set the related struct fields.
@@ -75,6 +76,27 @@ func TestOptions(t *testing.T) {
 		t.Errorf("CookieName not set correctly: got %v want %v",
 			cs.opts.CookieName, name)
 	}
+
+	if cs.opts.StripFormField != true {
+		t.Errorf("StripFormField not set correctly: got %v want %v",
+			cs.opts.StripFormField, true)
+	}
+}
+
+func TestStripFormFieldOption(t *testing.T) {
+	t.Run("StripFormField sets option", func(t *testing.T) {
+		cs := parseOptions(nil, StripFormField(true))
+		if !cs.opts.StripFormField {
+			t.Fatalf("StripFormField(true) did not set option: got %v want true", cs.opts.StripFormField)
+		}
+	})
+
+	t.Run("StripTokenFromForm sets option alias", func(t *testing.T) {
+		cs := parseOptions(nil, StripTokenFromForm(true))
+		if !cs.opts.StripFormField {
+			t.Fatalf("StripTokenFromForm(true) did not set option: got %v want true", cs.opts.StripFormField)
+		}
+	})
 }
 
 func TestMaxAge(t *testing.T) {

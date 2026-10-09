@@ -205,3 +205,38 @@ func contains(vals []string, s string) bool {
 func envError(r *http.Request, err error) *http.Request {
 	return contextSave(r, errorKey, err)
 }
+
+// stripFormField removes name from r.PostForm, r.Form, and r.MultipartForm.Value if present.
+func stripFormField(r *http.Request, name string) {
+	if r == nil || name == "" {
+		return
+	}
+	if r.PostForm != nil {
+		delete(r.PostForm, name)
+	}
+	if r.Form != nil {
+		delete(r.Form, name)
+	}
+	if r.MultipartForm != nil && r.MultipartForm.Value != nil {
+		delete(r.MultipartForm.Value, name)
+	}
+}
+
+// StripToken removes the CSRF form field from r.PostForm, r.Form, and
+// r.MultipartForm if present. The field name is retrieved from the request
+// context, falling back to the default field name.
+func StripToken(r *http.Request) {
+	if r == nil {
+		return
+	}
+
+	name := fieldName
+	if val, err := contextGet(r, formKey); err == nil {
+		if fn, ok := val.(string); ok && fn != "" {
+			name = fn
+		}
+	}
+
+	stripFormField(r, name)
+}
+
