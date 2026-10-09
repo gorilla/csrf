@@ -1,9 +1,12 @@
 package csrf
 
 import (
+	"bytes"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -542,3 +545,324 @@ func createRequest(method, path string, useTLS bool) *http.Request {
 	}
 	return r
 }
+
+// TestStripFormField verifies that enabling StripFormField removes the CSRF token
+// from r.PostForm and r.Form after successful validation.
+func TestStripFormField(t *testing.T) {
+	var token string
+	var postFormVal string
+	var formVal string
+	var fieldInPostForm bool
+	var fieldInForm bool
+	var usernameVal string
+
+	s := http.NewServeMux()
+	s.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	})
+	s.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+		postFormVal = r.PostFormValue(fieldName)
+		formVal = r.FormValue(fieldName)
+		_, fieldInPostForm = r.PostForm[fieldName]
+		_, fieldInForm = r.Form[fieldName]
+		usernameVal = r.PostFormValue("username")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	p := Protect(testKey, StripFormField(true))(s)
+
+	r := createRequest("GET", "/", false)
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("GET request failed: got %v want %v", rr.Code, http.StatusOK)
+	}
+
+	form := url.Values{}
+	form.Set(fieldName, token)
+	form.Set("username", "alice")
+
+	postReq := httptest.NewRequest("POST", "/submit", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	setCookie(rr, postReq)
+	postReq = PlaintextHTTPRequest(postReq)
+
+	postRR := httptest.NewRecorder()
+	p.ServeHTTP(postRR, postReq)
+
+	if postRR.Code != http.StatusOK {
+		t.Fatalf("POST request failed: got %v want %v", postRR.Code, http.StatusOK)
+	}
+
+	if usernameVal != "alice" {
+		t.Errorf("username form value not preserved: got %q want %q", usernameVal, "alice")
+	}
+
+	if postFormVal != "" {
+		t.Errorf("expected CSRF token to be stripped from PostFormValue, got %q", postFormVal)
+	}
+
+	if formVal != "" {
+		t.Errorf("expected CSRF token to be stripped from FormValue, got %q", formVal)
+	}
+
+	if fieldInPostForm {
+		t.Errorf("CSRF token key still present in r.PostForm map")
+	}
+
+	if fieldInForm {
+		t.Errorf("CSRF token key still present in r.Form map")
+	}
+}
+
+// TestStripFormFieldDefaultFalse verifies that by default (StripFormField not set),
+// the CSRF token field remains in r.PostForm and r.Form.
+func TestStripFormFieldDefaultFalse(t *testing.T) {
+	var token string
+	var fieldInPostForm bool
+	var fieldInForm bool
+
+	s := http.NewServeMux()
+	s.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	})
+	s.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.PostFormValue(fieldName)
+		_, fieldInPostForm = r.PostForm[fieldName]
+		_, fieldInForm = r.Form[fieldName]
+		w.WriteHeader(http.StatusOK)
+	})
+
+	p := Protect(testKey)(s)
+
+	r := createRequest("GET", "/", false)
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	form := url.Values{}
+	form.Set(fieldName, token)
+	form.Set("username", "bob")
+
+	postReq := httptest.NewRequest("POST", "/submit", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	setCookie(rr, postReq)
+	postReq = PlaintextHTTPRequest(postReq)
+
+	postRR := httptest.NewRecorder()
+	p.ServeHTTP(postRR, postReq)
+
+	if postRR.Code != http.StatusOK {
+		t.Fatalf("POST request failed: got %v want %v", postRR.Code, http.StatusOK)
+	}
+
+	if !fieldInPostForm {
+		t.Errorf("expected CSRF token key to remain in r.PostForm when StripFormField is false")
+	}
+
+	if !fieldInForm {
+		t.Errorf("expected CSRF token key to remain in r.Form when StripFormField is false")
+	}
+}
+
+// TestStripFormFieldCustomFieldName verifies that custom field names are also stripped.
+func TestStripFormFieldCustomFieldName(t *testing.T) {
+	var token string
+	var fieldInPostForm bool
+	customField := "custom_csrf_field"
+
+	s := http.NewServeMux()
+	s.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	})
+	s.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.PostFormValue(customField)
+		_, fieldInPostForm = r.PostForm[customField]
+		w.WriteHeader(http.StatusOK)
+	})
+
+	p := Protect(testKey, FieldName(customField), StripFormField(true))(s)
+
+	r := createRequest("GET", "/", false)
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	form := url.Values{}
+	form.Set(customField, token)
+	form.Set("item", "widget")
+
+	postReq := httptest.NewRequest("POST", "/submit", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	setCookie(rr, postReq)
+	postReq = PlaintextHTTPRequest(postReq)
+
+	postRR := httptest.NewRecorder()
+	p.ServeHTTP(postRR, postReq)
+
+	if postRR.Code != http.StatusOK {
+		t.Fatalf("POST request failed: got %v want %v", postRR.Code, http.StatusOK)
+	}
+
+	if fieldInPostForm {
+		t.Errorf("expected custom field %q to be stripped from r.PostForm", customField)
+	}
+}
+
+// TestStripFormFieldMultipart verifies that multipart form submissions have the
+// token removed from r.MultipartForm.Value, r.PostForm, and r.Form.
+func TestStripFormFieldMultipart(t *testing.T) {
+	var token string
+	var fieldInMultipart bool
+	var fieldInPostForm bool
+	var itemVal string
+
+	s := http.NewServeMux()
+	s.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	})
+	s.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+		if r.MultipartForm != nil {
+			_, fieldInMultipart = r.MultipartForm.Value[fieldName]
+		}
+		_, fieldInPostForm = r.PostForm[fieldName]
+		itemVal = r.PostFormValue("item")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	p := Protect(testKey, StripFormField(true))(s)
+
+	r := createRequest("GET", "/", false)
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	var b bytes.Buffer
+	mp := multipart.NewWriter(&b)
+	wr, err := mp.CreateFormField(fieldName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := wr.Write([]byte(token)); err != nil {
+		t.Fatal(err)
+	}
+	itemWr, err := mp.CreateFormField("item")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := itemWr.Write([]byte("gizmo")); err != nil {
+		t.Fatal(err)
+	}
+	mp.Close()
+
+	postReq := httptest.NewRequest("POST", "/submit", &b)
+	postReq.Header.Set("Content-Type", mp.FormDataContentType())
+	setCookie(rr, postReq)
+	postReq = PlaintextHTTPRequest(postReq)
+
+	postRR := httptest.NewRecorder()
+	p.ServeHTTP(postRR, postReq)
+
+	if postRR.Code != http.StatusOK {
+		t.Fatalf("POST multipart request failed: got %v want %v", postRR.Code, http.StatusOK)
+	}
+
+	if fieldInMultipart {
+		t.Errorf("CSRF field not stripped from r.MultipartForm.Value")
+	}
+
+	if fieldInPostForm {
+		t.Errorf("CSRF field not stripped from r.PostForm")
+	}
+
+	if itemVal != "gizmo" {
+		t.Errorf("item form value not preserved: got %q want %q", itemVal, "gizmo")
+	}
+}
+
+// TestStripFormFieldValidationFailure verifies that invalid tokens still fail
+// without panic when StripFormField is enabled.
+func TestStripFormFieldValidationFailure(t *testing.T) {
+	s := http.NewServeMux()
+	s.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	p := Protect(testKey, StripFormField(true))(s)
+
+	form := url.Values{}
+	form.Set(fieldName, "invalid-token")
+
+	postReq := httptest.NewRequest("POST", "/submit", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	postReq = PlaintextHTTPRequest(postReq)
+
+	postRR := httptest.NewRecorder()
+	p.ServeHTTP(postRR, postReq)
+
+	if postRR.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden on invalid token, got %v", postRR.Code)
+	}
+}
+
+// TestStripFormFieldStrictFormDecoder verifies that strict decoders (such as gorilla/schema)
+// can decode r.PostForm into a struct without encountering errors for the CSRF token field.
+func TestStripFormFieldStrictFormDecoder(t *testing.T) {
+	type UserModel struct {
+		Name  string
+		Email string
+	}
+
+	var token string
+	var decodeErr error
+	var user UserModel
+
+	s := http.NewServeMux()
+	s.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		token = Token(r)
+	})
+	s.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+		// Simulate strict decoder that errors on unexpected or dotted fields:
+		for k, v := range r.PostForm {
+			switch k {
+			case "name":
+				user.Name = v[0]
+			case "email":
+				user.Email = v[0]
+			default:
+				decodeErr = fmt.Errorf("unexpected field in form: %q", k)
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	p := Protect(testKey, StripFormField(true))(s)
+
+	r := createRequest("GET", "/", false)
+	rr := httptest.NewRecorder()
+	p.ServeHTTP(rr, r)
+
+	form := url.Values{}
+	form.Set(fieldName, token)
+	form.Set("name", "John")
+	form.Set("email", "john@example.com")
+
+	postReq := httptest.NewRequest("POST", "/submit", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	setCookie(rr, postReq)
+	postReq = PlaintextHTTPRequest(postReq)
+
+	postRR := httptest.NewRecorder()
+	p.ServeHTTP(postRR, postReq)
+
+	if postRR.Code != http.StatusOK {
+		t.Fatalf("POST request failed: got %v want %v", postRR.Code, http.StatusOK)
+	}
+
+	if decodeErr != nil {
+		t.Fatalf("strict decoder encountered unexpected field: %v", decodeErr)
+	}
+
+	if user.Name != "John" || user.Email != "john@example.com" {
+		t.Fatalf("decoded struct fields do not match: got %+v", user)
+	}
+}
+

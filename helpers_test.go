@@ -306,3 +306,74 @@ func TestUnsafeSkipCSRFCheck(t *testing.T) {
 			status, teapot)
 	}
 }
+
+func TestStripTokenHelper(t *testing.T) {
+	t.Run("strips default field name from PostForm and Form", func(t *testing.T) {
+		r := httptest.NewRequest("POST", "/", nil)
+		r.PostForm = url.Values{
+			fieldName: []string{"some-token"},
+			"user":    []string{"john"},
+		}
+		r.Form = url.Values{
+			fieldName: []string{"some-token"},
+			"user":    []string{"john"},
+		}
+
+		StripToken(r)
+
+		if _, exists := r.PostForm[fieldName]; exists {
+			t.Errorf("StripToken did not remove %q from PostForm", fieldName)
+		}
+		if _, exists := r.Form[fieldName]; exists {
+			t.Errorf("StripToken did not remove %q from Form", fieldName)
+		}
+		if r.PostForm.Get("user") != "john" {
+			t.Errorf("user field was not preserved: got %q want %q", r.PostForm.Get("user"), "john")
+		}
+	})
+
+	t.Run("strips custom field name saved in context", func(t *testing.T) {
+		r := httptest.NewRequest("POST", "/", nil)
+		customName := "my_custom_csrf"
+		r = contextSave(r, formKey, customName)
+		r.PostForm = url.Values{
+			customName: []string{"some-token"},
+			"payload":  []string{"data"},
+		}
+
+		StripToken(r)
+
+		if _, exists := r.PostForm[customName]; exists {
+			t.Errorf("StripToken did not remove custom field from PostForm")
+		}
+		if r.PostForm.Get("payload") != "data" {
+			t.Errorf("payload field was not preserved")
+		}
+	})
+
+	t.Run("strips from multipart form", func(t *testing.T) {
+		r := httptest.NewRequest("POST", "/", nil)
+		r.MultipartForm = &multipart.Form{
+			Value: map[string][]string{
+				fieldName: {"token"},
+				"field1":  {"val1"},
+			},
+		}
+
+		StripToken(r)
+
+		if _, exists := r.MultipartForm.Value[fieldName]; exists {
+			t.Errorf("StripToken did not remove field from MultipartForm")
+		}
+		if len(r.MultipartForm.Value["field1"]) == 0 {
+			t.Errorf("field1 not preserved in MultipartForm")
+		}
+	})
+
+	t.Run("handles nil request safely", func(t *testing.T) {
+		StripToken(nil)
+		stripFormField(nil, fieldName)
+		stripFormField(httptest.NewRequest("POST", "/", nil), "")
+	})
+}
+

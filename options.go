@@ -131,6 +131,22 @@ func TrustedOrigins(origins []string) Option {
 	}
 }
 
+// StripFormField configures the middleware to remove the CSRF token form field
+// from parsed form values (r.PostForm, r.Form, and r.MultipartForm) after
+// successful validation. This allows strict form decoders, such as
+// gorilla/schema, to decode forms without encountering unknown field errors.
+// Defaults to false.
+func StripFormField(strip bool) Option {
+	return func(cs *csrf) {
+		cs.opts.StripFormField = strip
+	}
+}
+
+// StripTokenFromForm is an alias for StripFormField.
+func StripTokenFromForm(strip bool) Option {
+	return StripFormField(strip)
+}
+
 // setStore sets the store used by the CSRF middleware.
 // Note: this is private (for now) to allow for internal API changes.
 func setStore(s store) Option {

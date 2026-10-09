@@ -327,7 +327,7 @@ You might want to set up a root path for all the cookies; that way, the CSRF wil
 
 ### Setting Options
 
-What about providing your own error handler and changing the HTTP header the
+What about providing your own error handler, stripping the token form field for decoders like `gorilla/schema`, or changing the HTTP header the
 package inspects on requests? (i.e. an existing API you're porting to Go). Well,
 gorilla/csrf provides options for changing these as you see fit:
 
@@ -337,6 +337,7 @@ func main() {
             []byte("a-32-byte-long-key-goes-here"),
             csrf.RequestHeader("Authenticity-Token"),
             csrf.FieldName("authenticity_token"),
+            csrf.StripFormField(true),
             csrf.ErrorHandler(http.HandlerFunc(serverError(403))),
     )
 
@@ -347,6 +348,8 @@ func main() {
     http.ListenAndServe(":8000", CSRF(r))
 }
 ```
+
+Passing `csrf.StripFormField(true)` strips the CSRF token field from `r.PostForm` and `r.Form` after validation so form decoders like `gorilla/schema` decode cleanly without encountering unknown fields.
 
 Not too bad, right?
 
