@@ -278,7 +278,15 @@ func (cs *csrf) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// if we have an Origin header, check it against our allowlist
 		origin := r.Header.Get("Origin")
-		if origin != "" {
+		if origin == "null" {
+			if !slices.Contains(cs.opts.TrustedOrigins, "null") {
+				// Origin "null" is an opaque origin (RFC 6454 §7.3) sent from
+				// privacy-sensitive contexts. When not explicitly trusted in
+				// cs.opts.TrustedOrigins, treat it as absent so that Referer-based
+				// origin verification is evaluated below.
+				origin = ""
+			}
+		} else if origin != "" {
 			parsedOrigin, err := url.Parse(origin)
 			if err != nil {
 				r = envError(r, ErrBadOrigin)

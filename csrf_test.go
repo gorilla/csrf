@@ -376,6 +376,7 @@ func TestProtectScenarios(t *testing.T) {
 		originUntrusted      bool
 		originHTTP           bool
 		originTrusted        bool
+		originNull           bool
 		secureRequest        bool
 		refererTrusted       bool
 		refererUntrusted     bool
@@ -414,6 +415,17 @@ func TestProtectScenarios(t *testing.T) {
 			name: "cleartext POST without origin with invalid token reject",
 		},
 		{
+			name:       "cleartext POST with null Origin & valid token pass",
+			originNull: true,
+			tokenValid: true,
+			want:       true,
+		},
+		{
+			name:         "cleartext POST with null Origin & invalid token reject",
+			originNull:   true,
+			tokenInvalid: true,
+		},
+		{
 			name:          "TLS POST with HTTP origin & no referer & valid token reject",
 			tokenValid:    true,
 			secureRequest: true,
@@ -425,13 +437,34 @@ func TestProtectScenarios(t *testing.T) {
 			tokenValid:    true,
 		},
 		{
+			name:          "TLS POST with null Origin and without referer reject",
+			originNull:    true,
+			secureRequest: true,
+			tokenValid:    true,
+		},
+		{
 			name:             "TLS POST without origin with untrusted referer reject",
 			secureRequest:    true,
 			refererUntrusted: true,
 			tokenValid:       true,
 		},
 		{
+			name:             "TLS POST with null Origin and untrusted referer reject",
+			originNull:       true,
+			secureRequest:    true,
+			refererUntrusted: true,
+			tokenValid:       true,
+		},
+		{
 			name:           "TLS POST without origin with trusted referer & valid token pass",
+			secureRequest:  true,
+			refererTrusted: true,
+			tokenValid:     true,
+			want:           true,
+		},
+		{
+			name:           "TLS POST with null Origin and trusted referer & valid token pass",
+			originNull:     true,
 			secureRequest:  true,
 			refererTrusted: true,
 			tokenValid:     true,
@@ -489,6 +522,8 @@ func TestProtectScenarios(t *testing.T) {
 				r.Header.Set("Origin", "https://www.gorillatoolkit.org")
 			case tt.originHTTP:
 				r.Header.Set("Origin", "http://www.gorillatoolkit.org")
+			case tt.originNull:
+				r.Header.Set("Origin", "null")
 			}
 
 			// Set the Referer header
@@ -542,3 +577,151 @@ func createRequest(method, path string, useTLS bool) *http.Request {
 	}
 	return r
 }
+
+func TestNullOrigin(t *testing.T) {
+	tests := []struct {
+		name           string
+		secure         bool
+		originHeader   string
+		refererHeader  string
+		trustedOrigins []string
+		validToken     bool
+		wantStatus     int
+		wantReason     error
+	}{
+		{
+			name:         "cleartext POST with Origin null and valid token succeeds",
+			secure:       false,
+			originHeader: "null",
+			validToken:   true,
+			wantStatus:   http.StatusOK,
+		},
+		{
+			name:         "cleartext POST with Origin null and invalid token rejected",
+			secure:       false,
+			originHeader: "null",
+			validToken:   false,
+			wantStatus:   http.StatusForbidden,
+			wantReason:   ErrBadToken,
+		},
+		{
+			name:         "TLS POST with Origin null and no Referer rejected",
+			secure:       true,
+			originHeader: "null",
+			validToken:   true,
+			wantStatus:   http.StatusForbidden,
+			wantReason:   ErrNoReferer,
+		},
+		{
+			name:          "TLS POST with Origin null and untrusted Referer rejected",
+			secure:        true,
+			originHeader:  "null",
+			refererHeader: "https://untrusted-site.com/form",
+			validToken:    true,
+			wantStatus:    http.StatusForbidden,
+			wantReason:    ErrBadReferer,
+		},
+		{
+			name:          "TLS POST with Origin null and HTTP downgrade Referer rejected",
+			secure:        true,
+			originHeader:  "null",
+			refererHeader: "http://www.gorillatoolkit.org/form",
+			validToken:    true,
+			wantStatus:    http.StatusForbidden,
+			wantReason:    ErrBadReferer,
+		},
+		{
+			name:          "TLS POST with Origin null and matching same-origin Referer succeeds",
+			secure:        true,
+			originHeader:  "null",
+			refererHeader: "https://www.gorillatoolkit.org/form",
+			validToken:    true,
+			wantStatus:    http.StatusOK,
+		},
+		{
+			name:           "TLS POST with Origin null and external Referer in TrustedOrigins succeeds",
+			secure:         true,
+			originHeader:   "null",
+			refererHeader:  "https://trusted-auth.org/redirect",
+			trustedOrigins: []string{"trusted-auth.org"},
+			validToken:     true,
+			wantStatus:     http.StatusOK,
+		},
+		{
+			name:           "TLS POST with Origin null and TrustedOrigins configured with null succeeds without Referer",
+			secure:         true,
+			originHeader:   "null",
+			trustedOrigins: []string{"null"},
+			validToken:     true,
+			wantStatus:     http.StatusOK,
+		},
+		{
+			name:           "TLS POST with Origin null, TrustedOrigins configured with null, and invalid token rejected",
+			secure:         true,
+			originHeader:   "null",
+			trustedOrigins: []string{"null"},
+			validToken:     false,
+			wantStatus:     http.StatusForbidden,
+			wantReason:     ErrBadToken,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var token string
+			var failureErr error
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/", func(_ http.ResponseWriter, r *http.Request) {
+				token = Token(r)
+			})
+			mux.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			opts := []Option{
+				ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					failureErr = FailureReason(r)
+					http.Error(w, FailureReason(r).Error(), http.StatusForbidden)
+				})),
+			}
+			if len(tt.trustedOrigins) > 0 {
+				opts = append(opts, TrustedOrigins(tt.trustedOrigins))
+			}
+
+			p := Protect(testKey, opts...)(mux)
+
+			getReq := createRequest("GET", "/", tt.secure)
+			getRec := httptest.NewRecorder()
+			p.ServeHTTP(getRec, getReq)
+
+			postReq := createRequest("POST", "/submit", tt.secure)
+			setCookie(getRec, postReq)
+
+			if tt.originHeader != "" {
+				postReq.Header.Set("Origin", tt.originHeader)
+			}
+			if tt.refererHeader != "" {
+				postReq.Header.Set("Referer", tt.refererHeader)
+			}
+
+			if tt.validToken {
+				postReq.Header.Set("X-CSRF-Token", token)
+			} else {
+				postReq.Header.Set("X-CSRF-Token", "invalid-token-value")
+			}
+
+			postRec := httptest.NewRecorder()
+			p.ServeHTTP(postRec, postReq)
+
+			if postRec.Code != tt.wantStatus {
+				t.Fatalf("expected status %d, got %d (failure: %v)", tt.wantStatus, postRec.Code, failureErr)
+			}
+
+			if tt.wantReason != nil && failureErr != tt.wantReason {
+				t.Fatalf("expected failure reason %v, got %v", tt.wantReason, failureErr)
+			}
+		})
+	}
+}
+
